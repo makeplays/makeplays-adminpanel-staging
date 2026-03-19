@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+  <g id="Group_36787" data-name="Group 36787" transform="translate(-1171 -2923)">
+    <g id="Iconly_Light-Outline_Wallet" data-name="Iconly/Light-Outline/Wallet" transform="translate(1170.032 2921.811)">
+      <g id="Wallet" transform="translate(2 3)">
+        <path id="Combined-Shape" d="M15.562,0a6.381,6.381,0,0,1,6.374,6.375V14a6.382,6.382,0,0,1-6.374,6.375H6.375A6.383,6.383,0,0,1,0,14V6.375A6.382,6.382,0,0,1,6.375,0Zm0,1.594H6.375A4.786,4.786,0,0,0,1.594,6.375V14a4.786,4.786,0,0,0,4.781,4.781h9.187A4.786,4.786,0,0,0,20.342,14v-.3H16.837a3.657,3.657,0,1,1,0-7.315h3.505V6.375A4.786,4.786,0,0,0,15.562,1.594Zm4.78,6.391H16.837a2.063,2.063,0,1,0,0,4.126h3.505Zm-3.019,1.2a.8.8,0,1,1,0,1.594h-.332a.8.8,0,0,1,0-1.594ZM11.356,4.823a.8.8,0,0,1,0,1.594H5.618a.8.8,0,0,1,0-1.594Z" transform="translate(0 0)" fill="#fff" fill-rule="evenodd"/>
+      </g>
+    </g>
+    <rect id="Rectangle_1114" data-name="Rectangle 1114" width="24" height="24" transform="translate(1171 2923)" fill="none"/>
+  </g>
+</svg>

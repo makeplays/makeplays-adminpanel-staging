@@ -1,0 +1,50 @@
+/* MenuOptionDropDown start */
+.menuOptionComponent {
+    color: #fff;
+    background: transparent !important;
+}
+
+.dropdown .btn {
+    color: #fff !important;
+}
+
+.dropdown .btn.show {
+    background: transparent !important;
+}
+
+.menuOptionComponent * {
+    outline: none !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.menuOptionComponent .dropdown-toggle {
+    padding: 0 !important;
+    font-size: 1.5rem;
+    background-color: transparent;
+}
+
+.menuOptionComponent .dropdown-toggle:after {
+    display: none !important;
+}
+
+.menuOptionComponent .dropdown-menu {
+    background-color: #ffffff !important;
+}
+
+.menuOptionComponent button {
+    color: #fff !important;
+    filter: invert(1);
+}
+
+.menuOptionComponent button:active {
+    background-color: transparent !important;
+}
+
+.menuOptionComponent .dropdown-menu:hover *,
+.menuOptionComponent .dropdown-menu:active * {
+    background-color: unset !important;
+    color: unset !important;
+}
+
+/* MenuOptionDropDown end */

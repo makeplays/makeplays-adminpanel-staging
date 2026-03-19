@@ -1,0 +1,326 @@
+body {
+  margin: 0;
+}
+
+/* npm sweetalert start */
+div:where(.swal2-icon) {
+  border: none !important;
+
+}
+.note-editable{
+  height: unset !important;
+}
+.swal2-actions {
+  width: 90%;
+  flex-direction: column-reverse;
+  gap: 0.5rem;
+  padding: 0;
+}
+
+.modelBtnOkStyles {
+  outline: none;
+  background: var(--gradient1) !important;
+  color: var(--static-white-900) !important;
+  padding: 8px 20px;
+  border-radius: 5px;
+  font-size: var(--font_fifteen);
+  font-family: "Montserrat", sans-serif;
+  font-weight: var(--weight_six);
+  min-width: 100px;
+  cursor: pointer;
+  transition: all 0.4s;
+  border: 1px solid var(--static-primary2) !important;
+}
+
+.modelBtnOkStyles:hover {
+  transform: scale(0.98);
+}
+
+.modelBtnCancelStyles {
+  border: 1px solid var(--static-primary2) !important;
+  outline: none;
+  background-color: transparent;
+  color: var(--static-primary2);
+  padding: 8px 20px;
+  border-radius: 5px;
+  font-size: var(--font_fifteen);
+  font-family: "Montserrat", sans-serif;
+  font-weight: var(--weight_six);
+  min-width: 100px;
+  cursor: pointer;
+}
+
+.modelBtnCancelStyles:hover {
+  background-color: var(--static-primary2);
+  color: var(--white);
+}
+
+.logoutModel .swal2-actions {
+  flex-direction: row !important;
+  flex-wrap: nowrap;
+}
+
+.logoutModel .modelBtnCancelStyles {
+  border: 2px solid #e1e1e1;
+}
+
+.logoutModel .modelBtnCancelStyles,
+.logoutModel .modelBtnOkStyles {
+  width: 30% !important;
+  min-width: 30% !important;
+  max-width: 30% !important;
+}
+
+/* npm sweetalert end */
+
+/* loaderComponent start */
+.noDataText {
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  height: 90%;
+}
+
+.noDataFoundPart {
+  width: 100%;
+  height: 100vh;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.noDataFoundPart h1 {
+  font-weight: 600;
+  font-size: max(6pc, 10vw);
+}
+
+.noDataFoundPart h3 {
+  font-weight: 600;
+  font-size: max(1pc, 2vw);
+}
+
+.noDataFoundPart a {
+  text-decoration: none;
+  display: flex;
+  margin: 1pc auto;
+
+}
+
+.loaderComponent {
+  width: 100%;
+  min-height: 300px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loaderComponent .wifi-loader {
+  --front-color: var(--static-primary1);
+  --front-color-in: var(--static-primary1);
+  --back-color: #c3c8de;
+  --text-color: #414856;
+
+  width: 64px;
+  height: 64px;
+  border-radius: 50px;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.loaderComponent .wifi-loader svg {
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.loaderComponent .wifi-loader svg circle {
+  position: absolute;
+  fill: none;
+  stroke-width: 6px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transform: rotate(-100deg);
+  transform-origin: center;
+}
+
+.loaderComponent .wifi-loader svg circle.back {
+  stroke: var(--back-color);
+}
+
+.loaderComponent .wifi-loader svg circle.front {
+  stroke: var(--front-color);
+}
+
+.loaderComponent .wifi-loader svg.circle-outer {
+  height: 86px;
+  width: 86px;
+}
+
+.loaderComponent .wifi-loader svg.circle-outer circle {
+  stroke-dasharray: 62.75 188.25;
+}
+
+.loaderComponent .wifi-loader svg.circle-outer circle.back {
+  animation: circle-outer135 1.8s ease infinite 0.3s;
+}
+
+.loaderComponent .wifi-loader svg.circle-outer circle.front {
+  animation: circle-outer135 1.8s ease infinite 0.15s;
+}
+
+.loaderComponent .wifi-loader svg.circle-middle {
+  height: 60px;
+  width: 60px;
+}
+
+.loaderComponent .wifi-loader svg.circle-middle circle {
+  stroke: var(--front-color-in);
+  stroke-dasharray: 42.5 127.5;
+}
+
+.loaderComponent .wifi-loader svg.circle-middle circle.back {
+  animation: circle-middle6123 1.8s ease infinite 0.25s;
+}
+
+.loaderComponent .wifi-loader svg.circle-middle circle.front {
+  animation: circle-middle6123 1.8s ease infinite 0.1s;
+}
+
+.loaderComponent .wifi-loader svg.circle-inner {
+  height: 34px;
+  width: 34px;
+}
+
+.loaderComponent .wifi-loader svg.circle-inner circle {
+  stroke-dasharray: 22 66;
+}
+
+.loaderComponent .wifi-loader svg.circle-inner circle.back {
+  animation: circle-inner162 1.8s ease infinite 0.2s;
+}
+
+.loaderComponent .wifi-loader svg.circle-inner circle.front {
+  animation: circle-inner162 1.8s ease infinite 0.05s;
+}
+
+.loaderComponent .wifi-loader .text {
+  position: absolute;
+  top: 150%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-transform: lowercase;
+  font-weight: 600;
+  font-size: 2rem;
+  letter-spacing: 2px;
+  display: none;
+}
+
+.loaderComponent .wifi-loader .text::before,
+.loaderComponent .wifi-loader .text::after {
+  content: attr(data-text);
+  text-transform: capitalize;
+}
+
+.loaderComponent .wifi-loader .text::before {
+  color: var(--text-color);
+}
+
+.loaderComponent .wifi-loader .text::after {
+  color: var(--front-color-in);
+  animation: text-animation76 3.6s ease infinite;
+  position: absolute;
+  left: 0;
+}
+
+@keyframes circle-outer135 {
+  0% {
+    stroke-dashoffset: 25;
+  }
+
+  25% {
+    stroke-dashoffset: 0;
+  }
+
+  65% {
+    stroke-dashoffset: 301;
+  }
+
+  80% {
+    stroke-dashoffset: 276;
+  }
+
+  100% {
+    stroke-dashoffset: 276;
+  }
+}
+
+@keyframes circle-middle6123 {
+  0% {
+    stroke-dashoffset: 17;
+  }
+
+  25% {
+    stroke-dashoffset: 0;
+  }
+
+  65% {
+    stroke-dashoffset: 204;
+  }
+
+  80% {
+    stroke-dashoffset: 187;
+  }
+
+  100% {
+    stroke-dashoffset: 187;
+  }
+}
+
+@keyframes circle-inner162 {
+  0% {
+    stroke-dashoffset: 9;
+  }
+
+  25% {
+    stroke-dashoffset: 0;
+  }
+
+  65% {
+    stroke-dashoffset: 106;
+  }
+
+  80% {
+    stroke-dashoffset: 97;
+  }
+
+  100% {
+    stroke-dashoffset: 97;
+  }
+}
+
+@keyframes text-animation76 {
+  0% {
+    clip-path: inset(0 100% 0 0);
+  }
+
+  50% {
+    clip-path: inset(0);
+  }
+
+  100% {
+    clip-path: inset(0 0 0 100%);
+  }
+}
+
+/* loaderComponent end */
