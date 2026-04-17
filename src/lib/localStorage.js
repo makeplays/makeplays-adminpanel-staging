@@ -21,14 +21,14 @@ export const setWalletAddress = (token) => {
 
 export const getWalletAddress = () => {
   if (localStorage.getItem('adminWalletAddress')) {
-    return localStorage.getItem('adminWalletAddress');
+    return localStorage.getItem('adminWalletAddress')
   }
   return '';
 };
 
 export const logoutUser = () => {
-
+  console.log("Logging out...");
   localStorage.removeItem("token");
   setAuthToken(false);
-  window.location.href = '/';
+  window.location.href = '/'
 };

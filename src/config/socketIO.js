@@ -1,7 +1,7 @@
-import io from 'socket.io-client';
-import baseUrl from '../config/index';
-import { getAuthToken } from '../lib/localStorage';
-import isEmpty from 'is-empty';
+import io from "socket.io-client";
+import baseUrl from "../config/index";
+import { getAuthToken } from "../lib/localStorage";
+import isEmpty from "is-empty";
 import jwt_decode from "jwt-decode";
 
 const URL = baseUrl.IMAGE_URL;
@@ -18,19 +18,19 @@ export const createConnection = () => {
       JoinRoom(decoded._id);
     }
   } catch (e) {
-    console.log('Erro on connection---->', e);
+    console.log("Erro on connection---->", e);
   }
 };
 
 export const JoinRoom = (data) => {
-
-  socket.emit('CREATEROOM', data);
+  console.log("joinRoom", data);
+  socket.emit("CREATEROOM", data);
 };
 
-socket.on('connection', () => {
-  socketId = socket.id;
-
-  if (socket.connected) {
-    createConnection();
-  }
-});
+// socket.on('connection', () => {
+//     socketId = socket.id
+//     console.log("------------------->SocketTest", socket.connected);
+//     if (socket.connected) {
+//         createConnection()
+//     }
+// })

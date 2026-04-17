@@ -7,7 +7,7 @@ import Exportexcel from "../../Components/Excelexport";
 import Papa from "papaparse";
 import { useHistory } from "react-router-dom";
 import { AllTeamModels } from "../../Modals/AllTeamPageModels";
-import { listAllTeam, DeleteTeam } from '../../api/teamApi';
+import { listAllTeam, DeleteTeam } from '../../api/teamApi'
 import key from "../../config/index";
 import { CustomToastHandler } from "../../hooks/useCustomToast";
 import { useSelector } from "react-redux";
@@ -18,93 +18,93 @@ const AllTeamPage = () => {
   const [pageNumer, setPageNumer] = useState(1);
   const [limit, setLimit] = useState(10);
   const [count, setCount] = useState(0);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(1)
   const history = useHistory();
   const [errors, setErrors] = useState({});
   const [fileName, setFileName] = useState();
   const [fileValues, setFileValues] = useState();
-
+  
   let user = useSelector((state) => state.isRun);
 
   const baseColumns = [
-  {
-    key: "sno",
-    text: "S.No",
-    className: "w_100 text-center",
-    align: "center",
-    sortable: false,
-    cell: (record, index) => {
-      return <p className="">{index + 1}</p>;
-    }
-  },
-  {
-    key: "sport",
-    text: "Sport",
-    sortable: false,
-    cell: (record) => {
-      return <p className="">{record?.sportId?.name ? record?.sportId?.name : "--"}</p>;
-    }
-  },
-  {
-    key: "teamName",
-    text: "Team Name",
-    sortable: true,
-    cell: (record) => {
-      return <p className="">{record?.teamName ? record?.teamName : "--"}</p>;
-    }
-  },
-  {
-    key: "ageCriteria",
-    text: "Age Criteria",
-    sortable: true,
-    cell: (record) => {
-      return <p className="">{record?.ageCriteria ? record?.ageCriteria : "--"}</p>;
-    }
-  },
-  {
-    key: "leagueOrClubName",
-    text: "League Name",
-    sortable: true,
-    cell: (record) => {
-      return <p className="">{record?.leagueOrClubName ? record?.leagueOrClubName : "--"}</p>;
-    }
-  },
-  {
-    key: "country",
-    text: "Country",
-    sortable: true,
-    cell: (record) => {
-      return <p className="">{record?.country ? record?.country : "--"}</p>;
-    }
-  },
-  {
-    key: "city",
-    text: "City",
-    sortable: true,
-    cell: (record) => {
-      return <p className="">{record?.city ? record?.city : "--"}</p>;
-    }
-  },
-  {
-    key: "Team Logo",
-    text: "Team Logo",
-    className: "activity",
-    align: "center",
-    sortable: false,
-    cell: (record) => {
-      if (record?.teamLogo != undefined) {
-        return (
-          <div className="tableImgViewCard">
-              {record.teamLogo ?
-            <img
-              src={`${key.IMAGE_URL}/Team/${record.teamLogo}`} /> :
-            <p>No Image</p>}{" "}
-            </div>);
-
+    {
+      key: "sno",
+      text: "S.No",
+      className: "w_100 text-center",
+      align: "center",
+      sortable: false,
+      cell: (record, index) => {
+        return <p className="">{index + 1}</p>
+      },
+    },
+    {
+      key: "sport",
+      text: "Sport",
+      sortable: false,
+      cell: (record) => {
+        return <p className="">{record?.sportId?.name ? record?.sportId?.name : "--"}</p>
+      },
+    },
+    {
+      key: "teamName",
+      text: "Team Name",
+      sortable: true,
+      cell: (record) => {
+        return <p className="">{record?.teamName ? record?.teamName : "--"}</p>
+      },
+    },
+    {
+      key: "ageCriteria",
+      text: "Age Criteria",
+      sortable: true,
+      cell: (record) => {
+        return <p className="">{record?.ageCriteria ? record?.ageCriteria : "--"}</p>
       }
+    },
+    {
+      key: "leagueOrClubName",
+      text: "League Name",
+      sortable: true,
+      cell: (record) => {
+        return <p className="">{record?.leagueOrClubName ? record?.leagueOrClubName : "--"}</p>
+      }
+    },
+    {
+      key: "country",
+      text: "Country",
+      sortable: true,
+      cell: (record) => {
+        return <p className="">{record?.country ? record?.country : "--"}</p>
+      }
+    },
+    {
+      key: "city",
+      text: "City",
+      sortable: true,
+      cell: (record) => {
+        return <p className="">{record?.city ? record?.city : "--"}</p>
+      }
+    },
+    {
+      key: "Team Logo",
+      text: "Team Logo",
+      className: "activity",
+      align: "center",
+      sortable: false,
+      cell: (record) => {
+        if (record?.teamLogo != undefined) {
+          return (
+            <div className="tableImgViewCard">
+              {record.teamLogo ?
+                <img
+                  src={`${key.IMAGE_URL}/Team/${record.teamLogo}`}
+                /> : <p>No Image</p>}{" "}
+            </div>
+          );
+        }
+      },
     }
-  }];
-
+  ]
 
   // 2. Action column separately
   const actionColumn = {
@@ -118,26 +118,26 @@ const AllTeamPage = () => {
         <div className="d-flex justify-content-center align-items-center gap-2">
           <button
             className="cmn_plain_btn"
-            onClick={() => handleShowEditUser(record)}>
-            
+            onClick={() => handleShowEditUser(record)}
+          >
             <img
               src={require("../../assets/images/editer.svg").default}
-              className="img-fluid table_activity_img" />
-            
+              className="img-fluid table_activity_img"
+            />
           </button>
 
           <button
             className="cmn_plain_btn"
-            onClick={() => handleShowDeleteUsers(record._id)}>
-            
+            onClick={() => handleShowDeleteUsers(record._id)}
+          >
             <img
               src={require("../../assets/images/trash.svg").default}
-              className="img-fluid table_activity_img" />
-            
+              className="img-fluid table_activity_img"
+            />
           </button>
-        </div>);
-
-    }
+        </div>
+      );
+    },
   };
 
   // 3. Final columns (conditionally add "Action" if Admin)
@@ -158,8 +158,8 @@ const AllTeamPage = () => {
       let { status, loading, error, message, result, count } = await listAllTeam(reqData);
       if (status) {
         setTeamList(result);
-        setCount(count);
-
+        setCount(count)
+        
       } else {
         if (error) {
         } else if (message) {
@@ -179,14 +179,14 @@ const AllTeamPage = () => {
   };
 
   const handlePagination = async (index) => {
-
-
+    console.log("indexindex",index);
+    
     let reqData = {
       page: index.page_number,
       limit: index.page_size,
-      search: index.filter_value
+      search: index.filter_value,
     };
-    getAllTeam(reqData);
+    getAllTeam(reqData)
     setPageNumer(index.page_number);
     setLimit(index.page_size);
     setCount(count);
@@ -214,7 +214,7 @@ const AllTeamPage = () => {
   };
 
   const loginNavigateHandle = () => {
-    history.push("/login-users");
+    history.push("/login-users")
   };
 
   // delete Exchange modal
@@ -243,7 +243,7 @@ const AllTeamPage = () => {
           valuesArray.push(Object.values(d));
         });
         setFileValues(valuesArray);
-      }
+      },
     });
   };
 
@@ -260,61 +260,61 @@ const AllTeamPage = () => {
         first: "First",
         previous: "Previous",
         next: "Next",
-        last: "Last"
-      }
+        last: "Last",
+      },
     },
     show_length_menu: false,
     show_filter: true,
     show_pagination: true,
-    show_info: false
+    show_info: false,
   };
 
   const extraButtons = [
-  {
-    className: "btn btn-primary buttons-pdf",
-    title: "Export TEst",
-    children: [
-    <span>
+    {
+      className: "btn btn-primary buttons-pdf",
+      title: "Export TEst",
+      children: [
+        <span>
           <i
-        className="glyphicon glyphicon-print fa fa-print"
-        aria-hidden="true"></i>
-        </span>],
-
-    onClick: (event) => {}
-  },
-  {
-    className: "btn btn-primary buttons-pdf",
-    title: "Export TEst",
-    children: [
-    <span>
+            className="glyphicon glyphicon-print fa fa-print"
+            aria-hidden="true"></i>
+        </span>,
+      ],
+      onClick: (event) => { },
+    },
+    {
+      className: "btn btn-primary buttons-pdf",
+      title: "Export TEst",
+      children: [
+        <span>
           <i
-        className="glyphicon glyphicon-print fa fa-print"
-        aria-hidden="true"></i>
-        </span>],
-
-    onClick: (event) => {},
-    onDoubleClick: (event) => {}
-  }];
-
+            className="glyphicon glyphicon-print fa fa-print"
+            aria-hidden="true"></i>
+        </span>,
+      ],
+      onClick: (event) => { },
+      onDoubleClick: (event) => { },
+    },
+  ];
 
   const handleConfirmDelete = async () => {
     try {
       const data = { teamId: deleteRecord };
       const { status, message, error } = await DeleteTeam(data);
       if (status) {
-        CustomToastHandler({ msg: message });
+        CustomToastHandler({ msg: message })
         setErrors({});
         getAllTeam();
       } else {
         if (error) {
           setErrors(error);
         } else if (message) {
-          CustomToastHandler({ msg: message, type: "error" });
+          CustomToastHandler({ msg: message, type: "error" })
         }
       }
     } catch (err) {
       console.log("handleConfirmDelete__error", err);
-      CustomToastHandler({ msg: "An error occurred while deleting the record.", type: "error" });
+      CustomToastHandler({ msg: "An error occurred while deleting the record.", type: "error" })
     } finally {
       handleCloseDeleteUsers();
     }
@@ -333,11 +333,11 @@ const AllTeamPage = () => {
             <div className="common_page_scroller pb-5 mt-3 mt-sm-5 pe-2">
               <div className="exchange_table_holder dashboard_box rounded-3 mt-4 tabletop">
                 {/* <div className="d-flex justify-content-between align-items-center px-3 my-3">
-                   <div className="cmn_extraBtnsHolder table_extrabtns d-flex justify-content-start align-items-center ">
-                     <Exportexcel excelData={teamList} fileName={"users"} />
-                     <p className="m-0 cmn_extraBtnsLabel">Exports</p>
-                   </div>
-                  </div> */}
+                  <div className="cmn_extraBtnsHolder table_extrabtns d-flex justify-content-start align-items-center ">
+                    <Exportexcel excelData={teamList} fileName={"users"} />
+                    <p className="m-0 cmn_extraBtnsLabel">Exports</p>
+                  </div>
+                </div> */}
                 <ReactDatatable
                   config={config}
                   records={teamList}
@@ -348,9 +348,9 @@ const AllTeamPage = () => {
                   onChange={(e) => {
                     handlePagination(e);
                   }}
-                  filterRecords={(e) => {}}
-                  filterData={(e) => {}} />
-                
+                  filterRecords={(e) => { }}
+                  filterData={(e) => { }}
+                />
               </div>
             </div>
           </Col>
@@ -359,15 +359,15 @@ const AllTeamPage = () => {
 
       {/*start modals */}
       <AllTeamModels.DeleteModal show={showDeleteUsers}
-      record={deleteRecord}
-      getAllTeam={getAllTeam}
-      handleClose={handleCloseDeleteUsers}
-      onConfirm={handleConfirmDelete} />
-      
+        record={deleteRecord}
+        getAllTeam={getAllTeam}
+        handleClose={handleCloseDeleteUsers}
+        onConfirm={handleConfirmDelete}
+      />
 
       {/* end of modals */}
-    </>);
-
+    </>
+  );
 };
 
 export default AllTeamPage;
