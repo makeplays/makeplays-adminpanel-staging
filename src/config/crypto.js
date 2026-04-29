@@ -1,9 +1,9 @@
 let key = {};
 
 key = {
-    cryptoSecretKey: "1234567812345678",
-    secretKey: "1A2B33dfescfuio"
-}
+  cryptoSecretKey: process.env.REACT_APP_CRYPTO_SECRET_KEY,
+  secretKey: process.env.REACT_APP_SECRET_KEY,
+};
 export default {
-    ...key
-}
+  ...key,
+};

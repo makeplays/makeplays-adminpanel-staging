@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { removeAuthToken } from "../lib/localStorage";
 import { useHistory } from "react-router-dom";
@@ -7,19 +7,23 @@ import { useAlert } from "../hooks/useAlert";
 import { useSelector } from "react-redux";
 
 function Sidebar() {
-
   const history = useHistory();
   //redux-state
   let { restrictions, role, accessLevel } = useSelector((state) => state.isRun);
-
   const { showAlert } = useAlert();
+  const sidebarRef = useRef();
+
+  useEffect(() => {
+    const saved = sessionStorage.getItem("scroll");
+    if (saved) sidebarRef.current.scrollTop = saved;
+  }, []);
 
   const onConfirmHandle = async () => {
     try {
       history.push("/");
       removeAuthToken();
     } catch (err) {
-      console.log("onConfirmHandle__err", err)
+      console.log("onConfirmHandle__err", err);
     }
   };
 
@@ -33,9 +37,9 @@ function Sidebar() {
       showCancelButton: true,
       showConfirmButton: true,
       cancelButtonText: "Cancel",
-      confirmButtonText: "Yes"
-    })
-  }
+      confirmButtonText: "Yes",
+    });
+  };
 
   return (
     <>
@@ -49,14 +53,16 @@ function Sidebar() {
               />
             </NavLink>
           </div>
-          <ul className="sidebar__scrollUl">
+          <ul className="sidebar__scrollUl" ref={sidebarRef}
+            onScroll={() =>
+              sessionStorage.setItem("scroll", sidebarRef.current.scrollTop)
+            }>
             {navLinks && navLinks.length > 0
               ? navLinks.map((item, i) => {
-
                 //Restriction logic
                 let allow = false;
                 if (restrictions && restrictions.length > 0) {
-                  allow = restrictions.includes(item.path)
+                  allow = restrictions.includes(item.path);
                 }
 
                 if (
@@ -68,7 +74,8 @@ function Sidebar() {
                     <li className="rounded-end-5 mb-3">
                       <NavLink
                         to={item.path}
-                        className="sidebar_links d-flex gap-3 justify-content-start align-items-center p-2 ps-4">
+                        className="sidebar_links d-flex gap-3 justify-content-start align-items-center p-2 ps-4"
+                      >
                         <img
                           src={item.image}
                           className="img-fluid sidebar_linkImg"
@@ -97,12 +104,14 @@ function Sidebar() {
                 }
 
                 return null;
-
               })
               : ""}
 
             {/* Logout */}
-            <li className="rounded-end-5 d-flex justify-content-start align-items-center gap-3 p-2 ps-4" onClick={() => logutAlertHandle()}>
+            <li
+              className="rounded-end-5 d-flex justify-content-start align-items-center gap-3 p-2 ps-4"
+              onClick={() => logutAlertHandle()}
+            >
               <img
                 src={require("../assets/images/logout.svg").default}
                 className="img-fluid sidebar_linkImg"

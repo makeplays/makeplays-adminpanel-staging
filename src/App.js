@@ -2,14 +2,14 @@ import "./App.css";
 import "../src/assets/css/Style.css";
 import isEmpty from "is-empty";
 import jwt_decode from "jwt-decode";
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState } from "react";
 import { BrowserRouter, Switch } from "react-router-dom";
 import ConditionRoute from "./Components/ConditionRoute";
 import NotFound from "./Components/NotFound";
-import { useDispatch, useSelector } from 'react-redux'
+import { useDispatch, useSelector } from "react-redux";
 import HelperRoute from "./HelperRoutes.js";
-import SocketContext from './context/socketContext.js'
-import { JoinRoom, socket } from './config/socketIO.js'
+import SocketContext from "./context/socketContext.js";
+import { JoinRoom, socket } from "./config/socketIO.js";
 
 // Public Screens
 import LoginPage from "./Screens/LoginPage";
@@ -26,7 +26,7 @@ import EventsPage from "./Screens/EventsPage/EventsPage";
 import EmailTemplatePage from "./Screens/EmailTemplatePage/EmailTemplatePage";
 import MembersPage from "./Screens/MembersPage/MembersPage";
 import SportPage from "./Screens/SportPage/SportPage";
-import { Toaster } from 'sonner';
+import { Toaster } from "sonner";
 import { EditTeamPage } from "./Screens/AllTeamPage/EditTeamPage";
 import { EditMembersPage } from "./Screens/MembersPage/EditMembersPage";
 import { EditEventsPage } from "./Screens/EventsPage/EditEventsPage";
@@ -58,6 +58,7 @@ import { ReplyContactUsPage } from "./Screens/ContactUsPage/ReplyContactUsPage.j
 import FaqPage from "./Screens/FaqPage/FaqPage.jsx";
 import { AddFaqPage } from "./Screens/FaqPage/AddFaqPage.jsx";
 import { EditFaqPage } from "./Screens/FaqPage/EditFaqPage.jsx";
+import DataDeletion from "./Screens/DataDeletion/DataDeletion.jsx";
 
 function App() {
   const dispatch = useDispatch();
@@ -80,7 +81,11 @@ function App() {
     { path: "/members", component: MembersPage, type: "private" },
     { path: "/members/edit", component: EditMembersPage, type: "private" },
     { path: "/email-template", component: EmailTemplatePage, type: "private" },
-    { path: "/email-template/edit", component: EditEmailTemplatePage, type: "private" },
+    {
+      path: "/email-template/edit",
+      component: EditEmailTemplatePage,
+      type: "private",
+    },
     { path: "/sports", component: SportPage, type: "private" },
     { path: "/sports/edit", component: EditSportPage, type: "private" },
     { path: "/sports/add", component: AddSportPage, type: "private" },
@@ -90,15 +95,35 @@ function App() {
     { path: "/playlist/edit", component: EditPlaylistPage, type: "private" },
     { path: "/voice", component: VoicePage, type: "private" },
     { path: "/language", component: LanguagePage, type: "private" },
-    { path: "/admin-and-access", component: UsersAndAccessPage, type: "private" },
+    {
+      path: "/admin-and-access",
+      component: UsersAndAccessPage,
+      type: "private",
+    },
     { path: "/admin-and-access/add", component: AddUsersPage, type: "private" },
-    { path: "/admin-and-access/edit", component: EditUsersPage, type: "private" },
+    {
+      path: "/admin-and-access/edit",
+      component: EditUsersPage,
+      type: "private",
+    },
     { path: "/voice-template", component: VoiceTemplatePage, type: "private" },
-    { path: "/voice-template/add", component: AddVoiceTemplatePage, type: "private" },
-    { path: "/voice-template/edit", component: EditVoiceTemplatePage, type: "private" },
+    {
+      path: "/voice-template/add",
+      component: AddVoiceTemplatePage,
+      type: "private",
+    },
+    {
+      path: "/voice-template/edit",
+      component: EditVoiceTemplatePage,
+      type: "private",
+    },
     { path: "/credits", component: CreditsPage, type: "private" },
     { path: "/contactus", component: ContactUsPage, type: "private" },
-    { path: "/contactus/reply", component: ReplyContactUsPage, type: "private"},
+    {
+      path: "/contactus/reply",
+      component: ReplyContactUsPage,
+      type: "private",
+    },
     { path: "/dashboard", component: Dashboard, type: "private" },
     { path: "/cms", component: CmsPage, type: "private" },
     { path: "/cms/edit", component: EditCmsPage, type: "private" },
@@ -107,16 +132,16 @@ function App() {
     { path: "/faq", component: FaqPage, type: "private" },
     { path: "/faq/add", component: AddFaqPage, type: "private" },
     { path: "/faq/edit", component: EditFaqPage, type: "private" },
+    { path: "/data-deletion", component: DataDeletion, type: "public" },  
   ];
 
   useEffect(() => {
-
     let token = getAuthToken();
     if (!isEmpty(token)) {
       token = token.replace("Bearer ", "");
       const decoded = jwt_decode(token);
       if (decoded) {
-        JoinRoom(decoded?._id?.toString())
+        JoinRoom(decoded?._id?.toString());
         dispatch({
           type: SET_AUTHENTICATION,
           authData: {
@@ -127,11 +152,10 @@ function App() {
             accessLevel: decoded.accessLevel,
             role: decoded.role,
             email: decoded.email,
-            name: decoded.name
+            name: decoded.name,
           },
         });
       }
-
     } else {
       dispatch({
         type: SET_AUTHENTICATION,
@@ -143,17 +167,29 @@ function App() {
           role: "",
           accessLevel: "",
           email: "",
-          name: ""
+          name: "",
         },
       });
     }
-  }, [dispatch])
+  }, [dispatch]);
+
+  if (process.env.REACT_APP_MODE == "production") {
+    console.log = () => {};
+    console.info = () => {};
+    console.error = () => {};
+    console.info = () => {};
+  }
 
   return (
     <BrowserRouter>
       <SocketContext.Provider value={{ socket }}>
         <HelperRoute>
-          <Toaster position="top-right" theme='light' richColors className='customToaster' />
+          <Toaster
+            position="top-right"
+            theme="light"
+            richColors
+            className="customToaster"
+          />
           <Switch>
             {routes.map(({ path, component, type }, index) => (
               <ConditionRoute
