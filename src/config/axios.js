@@ -11,6 +11,9 @@ axios.defaults.headers.common["Authorization"] = getAuthToken();
 axios.defaults.headers.common["x-api-key"] =
   process.env.REACT_APP_API_KEY || "your-api-key-here";
 
+  console.log('x-api-key', {authToken: getAuthToken(), apikey: process.env.REACT_APP_API_KEY || "your-api-key-here"});
+  
+
 // Flag to prevent multiple simultaneous refresh attempts
 let isRefreshing = false;
 let failedQueue = [];

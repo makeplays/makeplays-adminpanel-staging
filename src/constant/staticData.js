@@ -161,6 +161,14 @@ export const navLinks = [
     //     image: require("../assets/images/attendanceIcon.svg").default,
     // },
     {
+        path: "/announcement-template",
+        name: "Announcement Templates",
+        exact: true,
+        sidemenu: true,
+        type: "private",
+        image: require("../assets/images/voiceTemplateIcon.svg").default,
+    },
+    {
         path: "/email-template",
         name: "Email Template",
         exact: true,

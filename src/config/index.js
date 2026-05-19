@@ -12,7 +12,6 @@ if (env === "production") {
   };
 } else if (env === "demo") {
   //Set Demo Config`
-
   key = {
     secretOrKey: process.env.REACT_APP_SECRET_OR_KEY,
     CRYPTO_SECRET_KEY: process.env.REACT_APP_CRYPTO_SECRET_KEY,

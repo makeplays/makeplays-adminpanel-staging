@@ -59,6 +59,9 @@ import FaqPage from "./Screens/FaqPage/FaqPage.jsx";
 import { AddFaqPage } from "./Screens/FaqPage/AddFaqPage.jsx";
 import { EditFaqPage } from "./Screens/FaqPage/EditFaqPage.jsx";
 import DataDeletion from "./Screens/DataDeletion/DataDeletion.jsx";
+import AnnouncementTemplatePage from "./Screens/AnnouncementTemplatePage/AnnouncementTemplatePage.jsx";
+import { AddAnnouncementTemplatePage } from "./Screens/AnnouncementTemplatePage/AddAnnouncementTemplatePage.jsx";
+import { EditAnnouncementTemplatePage } from "./Screens/AnnouncementTemplatePage/EditAnnouncementTemplatePage.jsx";
 
 function App() {
   const dispatch = useDispatch();
@@ -132,7 +135,10 @@ function App() {
     { path: "/faq", component: FaqPage, type: "private" },
     { path: "/faq/add", component: AddFaqPage, type: "private" },
     { path: "/faq/edit", component: EditFaqPage, type: "private" },
-    { path: "/data-deletion", component: DataDeletion, type: "public" },  
+    { path: "/data-deletion", component: DataDeletion, type: "public" },
+    { path: "/announcement-template", component: AnnouncementTemplatePage, type: "private" },
+    { path: "/announcement-template/add", component: AddAnnouncementTemplatePage, type: "private" },
+    { path: "/announcement-template/edit", component: EditAnnouncementTemplatePage, type: "private" },  
   ];
 
   useEffect(() => {
@@ -209,3 +215,5 @@ function App() {
 }
 
 export default App;
+
+

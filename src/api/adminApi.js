@@ -582,6 +582,65 @@ export const ActivateSubadmin = async (data) => {
   }
 };
 
+// Announcement Template
+export const getAnnouncementTemplates = async (reqData) => {
+  try {
+    const respData = await axios({ url: `/admin/getAnnouncementTemplates`, method: "get", params: reqData });
+    const decryptedData = Customdecryptdata(respData?.data, secretKey);
+    return { status: decryptedData.status, message: decryptedData.message, result: decryptedData.data, count: decryptedData.count };
+  } catch (err) {
+    console.log("getAnnouncementTemplates__err", err);
+    if (!err?.response?.data) return { status: false, message: "Network error. Please check if the server is running." };
+    const decryptedData = Customdecryptdata(err.response.data, secretKey);
+    return { status: false, message: decryptedData?.message };
+  }
+};
+
+export const addAnnouncementTemplate = async (data) => {
+  try {
+    console.log('addAnnouncementTemplate-data', data);
+    
+    const encryptedData = Customencryptdata(data, secretKey);
+    console.log('addAnnouncementTemplate-encryptedData', encryptedData);
+    const respData = await axios({ url: `/admin/addAnnouncementTemplate`, method: "post", data: { token: encryptedData } });
+    const decryptedData = Customdecryptdata(respData?.data, secretKey);
+    return { status: decryptedData.status, message: decryptedData.message, result: decryptedData.data };
+  } catch (err) {
+    console.log("addAnnouncementTemplate__err", err);
+    if (!err?.response?.data) return { status: false, message: "Network error. Please check if the server is running." };
+    const decryptedData = Customdecryptdata(err.response.data, secretKey);
+    return { status: false, message: decryptedData?.message };
+  }
+};
+
+export const updateAnnouncementTemplate = async (data) => {
+  try {
+    const encryptedData = Customencryptdata(data, secretKey);
+    const respData = await axios({ url: `/admin/updateAnnouncementTemplate`, method: "post", data: { token: encryptedData } });
+    const decryptedData = Customdecryptdata(respData?.data, secretKey);
+    return { status: decryptedData.status, message: decryptedData.message, result: decryptedData.data };
+  } catch (err) {
+    console.log("updateAnnouncementTemplate__err", err);
+    if (!err?.response?.data) return { status: false, message: "Network error. Please check if the server is running." };
+    const decryptedData = Customdecryptdata(err.response.data, secretKey);
+    return { status: false, message: decryptedData?.message };
+  }
+};
+
+export const deleteAnnouncementTemplate = async (data) => {
+  try {
+    const encryptedData = Customencryptdata(data, secretKey);
+    const respData = await axios({ url: `/admin/deleteAnnouncementTemplate`, method: "post", data: { token: encryptedData } });
+    const decryptedData = Customdecryptdata(respData?.data, secretKey);
+    return { status: decryptedData.status, message: decryptedData.message };
+  } catch (err) {
+    console.log("deleteAnnouncementTemplate__err", err);
+    if (!err?.response?.data) return { status: false, message: "Network error. Please check if the server is running." };
+    const decryptedData = Customdecryptdata(err.response.data, secretKey);
+    return { status: false, message: decryptedData?.message };
+  }
+};
+
 export const UpdateSelectedVoices = async (data) => {
   try {
     const encryptedData = Customencryptdata(data, secretKey);
@@ -985,3 +1044,4 @@ export const UploadImage = async (data) => {
     };
   }
 };
+

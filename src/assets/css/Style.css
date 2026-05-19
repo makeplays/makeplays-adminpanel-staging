@@ -816,6 +816,11 @@ input:checked+.slider:before {
   width: 100%;
 }
 
+.rp_singleInput option {
+  background-color: #1e1e1e;
+  color: #ffffff;
+}
+
 .rp_input_holder:read-only {
   border-color: #2a2a2a;
 }
