@@ -311,10 +311,14 @@ export const EditProfiles = async (data) => {
 
 export const listAllVoices = async (reqData) => {
   try {
+    if (reqData?.sync) {
+      await axios({ url: `/user/getVoiceListAndSave`, method: "get" });
+    }
+    const { sync, ...restParams } = reqData || {};
     const respData = await axios({
       url: `/admin/getVoices`,
       method: "get",
-      params: reqData,
+      params: restParams,
     });
     const decryptedData = Customdecryptdata(respData?.data, secretKey);
     return {

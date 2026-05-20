@@ -7,12 +7,27 @@ import { CustomToastHandler } from "../../hooks/useCustomToast";
 
 const CATEGORY_TYPE_MAP = {
   goal: ["Unassisted", "Assisted", "SecondAssist", "OwnGoal", "PenaltyGoal"],
-  penalty: ["General"],
+  penalty: ["Minor", "Major", "Misconduct", "Match"],
   commentary: ["General"],
   lineup: ["General"],
   substitution: ["General"],
   foul: ["General"],
   corner: ["General"],
+};
+
+const VARIABLE_HINTS = {
+  goal:         ["{scorer}", "{team}", "{assist1}", "{assist2}"],
+  penalty:      ["{player}", "{team}", "{penalty_type}"],
+  substitution: ["{player_in}", "{player_out}", "{team}"],
+  foul:         ["{player}", "{team}"],
+  commentary:   ["{team}"],
+  lineup:       ["{player}", "{team}"],
+  corner:       ["{team}"],
+};
+
+const PLACEHOLDERS = {
+  goal:    "e.g. Goal scored by {scorer} assisted by {assist1}",
+  penalty: "e.g. {player} receives a {penalty_type} penalty for {team}",
 };
 
 const initialFormValue = { category: "", type: "", phrase: "" };
@@ -116,7 +131,10 @@ export const AddAnnouncementTemplatePage = () => {
             <div className="rp_singleinput_holder mb-3">
               <p className="rp_label mb-2">Phrase</p>
               <p className="rp_label mb-2" style={{ fontSize: "12px", opacity: 0.6 }}>
-                Use {"{variable}"} syntax. Reserved: {"{scorer}"} (goal scorer), {"{team}"} (team name). Assist players map in order of appearance: {"{assist1}"}, {"{assist2}"}, etc.
+                Use {"{variable}"} syntax.
+                {formvalue.category && VARIABLE_HINTS[formvalue.category] && (
+                  <> Reserved for <b>{formvalue.category}</b>: {VARIABLE_HINTS[formvalue.category].join(", ")}</>
+                )}
               </p>
               <div className="rp_input_holder py-2 px-3 rounded-2">
                 <textarea
@@ -125,7 +143,7 @@ export const AddAnnouncementTemplatePage = () => {
                   rows="3"
                   value={formvalue.phrase}
                   onChange={handleChange}
-                  placeholder="e.g. Goal scored by {scorer} assisted by {assist}"
+                  placeholder={PLACEHOLDERS[formvalue.category] || "e.g. Goal scored by {scorer} assisted by {assist1}"}
                 />
               </div>
               <span className="text-danger">{errors.phrase}</span>

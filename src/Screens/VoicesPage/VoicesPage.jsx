@@ -4,13 +4,37 @@ import Sidebar from "../../Components/Sidebar";
 import Header from "../../Components/Header";
 import ReactDatatable from "@ashvin27/react-datatable";
 import Papa from "papaparse";
-import { FaLink } from "react-icons/fa";
+import { FaLink, FaPlay } from "react-icons/fa";
 import { useHistory } from "react-router-dom";
 import { listAllVoices, UpdateSelectedVoices } from '../../api/adminApi'
 import key from "../../config/index";
 import { CustomToastHandler } from "../../hooks/useCustomToast";
 import VoiceActionModels from "../../Modals/VoiceActionModels";
 import { isEmpty } from "../../lib/isEmpty";
+
+const DescriptionCell = ({ text }) => {
+    const [expanded, setExpanded] = useState(false);
+    if (!text) return <p className="text-center">--</p>;
+    return (
+        <div>
+            <p style={{
+                display: '-webkit-box',
+                WebkitLineClamp: expanded ? 'unset' : 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                margin: 0,
+            }}>
+                {text}
+            </p>
+            <span
+                onClick={() => setExpanded(!expanded)}
+                style={{ color: '#9D110C', cursor: 'pointer', fontSize: 12 }}
+            >
+                {expanded ? 'Read less' : 'Read more'}
+            </span>
+        </div>
+    );
+};
 
 const VoicePage = () => {
 
@@ -26,21 +50,42 @@ const VoicePage = () => {
     const [selectedAudioRecord, setSelectedAudioRecord] = useState(null);
     const [selectedVoiceIds, setSelectedVoiceIds] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSyncing, setIsSyncing] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
     const [showAction, setShowAction] = useState(false);
     const [selectedRecord, setSelectedRecord] = useState(null);
+    const [playingVoiceId, setPlayingVoiceId] = useState(null);
 
     const handleCheckboxChange = (voiceId) => {
-        setIsEdit(true)
+        setIsEdit(true);
         setSelectedVoiceIds((prev) =>
             prev.includes(voiceId) ? prev.filter(id => id !== voiceId) : [...prev, voiceId]
         );
     };
 
+    const allCurrentSelected = voiceList?.length > 0 && voiceList.every(v => selectedVoiceIds.includes(v.voice_id));
+
+    const handleSelectAll = () => {
+        setIsEdit(true);
+        if (allCurrentSelected) {
+            const currentIds = voiceList.map(v => v.voice_id);
+            setSelectedVoiceIds(prev => prev.filter(id => !currentIds.includes(id)));
+        } else {
+            const currentIds = voiceList.map(v => v.voice_id);
+            setSelectedVoiceIds(prev => Array.from(new Set([...prev, ...currentIds])));
+        }
+    };
+
     const columns = [
         {
             key: "action",
-            text: "Action",
+            text: <input
+                type="checkbox"
+                className="checkboxBG"
+                onChange={handleSelectAll}
+                checked={allCurrentSelected}
+                title="Select all on this page"
+            />,
             sortable: false,
             cell: (record, index) => (
                 <input
@@ -61,107 +106,83 @@ const VoicePage = () => {
             },
         },
         {
-            key: "voiceId",
-            text: "Voice ID",
-            sortable: true,
-            cell: (record, index) => (
-                <p className="text-center">{record?.voice_id ? record.voice_id : "--"}</p>
-            ),
-        },
-        {
             key: "name",
-            text: "name",
+            text: "Name",
             sortable: true,
             cell: (record, index) => (
                 <p className="text-center">{record?.name ? record.name : "--"}</p>
             ),
         },
         {
-            key: "language",
-            text: "Language",
-            sortable: true,
-            cell: (record, index) => (
-                <p className="text-center">{record?.labels?.language ? record?.labels?.language : "--"}</p>
-            ),
-        },
-        {
-            key: "accent",
-            text: "Accent",
-            sortable: true,
-            cell: (record, index) => (
-                <p className="text-center">{record?.labels?.accent ? record?.labels?.accent : "--"}</p>
-            ),
-        },
-        {
             key: "description",
             text: "Description",
             sortable: true,
-            cell: (record, index) => (
-                <p className="text-center">{record?.description ? record.description : "--"}</p>
-            ),
+            cell: (record) => <DescriptionCell text={record?.description} />,
         },
         {
             key: "preview_url",
-            text: "Preview URL",
-            sortable: true,
-            cell: (record, index) => (
-                <div className="d-flex align-items-center justify-content-center">
-                    {record?.preview_url ? (
-                        <button
-                            className="table_extrabtns p-2"
-                            onClick={() =>
-                                window.open(record.preview_url, "_blank", "noopener,noreferrer")
-                            }
-                        >
-                            <FaLink />
-                        </button>
-                    ) : (
-                        <p className="text-center">No URL</p>
-                    )}
-                </div>
-            ),
-        },
-        {
-            key: "image",
-            text: "Preview Image",
+            text: "Preview",
             sortable: false,
             cell: (record) => {
-                if (record?.image && record?.image != "undefined") {
+                if (!record?.preview_url) return <p className="text-center">No URL</p>;
+                if (playingVoiceId === record.voice_id) {
                     return (
-                        <div className="tableImgViewCard">
-                            <img
-                                src={`${key.IMAGE_URL}/AiImage/${record.image}`}
-                            />{" "}
+                        <div className="d-flex flex-column align-items-center gap-1">
+                            <audio
+                                controls
+                                autoPlay
+                                src={record.preview_url}
+                                onEnded={() => setPlayingVoiceId(null)}
+                                style={{ height: 32, width: 160 }}
+                            />
+                            <span
+                                onClick={() => setPlayingVoiceId(null)}
+                                style={{ color: '#9D110C', cursor: 'pointer', fontSize: 11 }}
+                            >
+                                Close
+                            </span>
                         </div>
                     );
-                } else {
-                    return <span>--</span>;
                 }
+                return (
+                    <div className="d-flex align-items-center justify-content-center">
+                        <button
+                            className="table_extrabtns p-2"
+                            onClick={() => setPlayingVoiceId(record.voice_id)}
+                        >
+                            <FaPlay />
+                        </button>
+                    </div>
+                );
             },
         },
         {
-            key: "action",
-            text: "Image Action",
-            sortable: true,
-            cell: (record, index) => (
-                <div className="d-flex align-items-center justify-content-center">
+            key: "image",
+            text: "Image",
+            sortable: false,
+            cell: (record) => {
+                if (record?.image && record?.image !== "undefined") {
+                    return (
+                        <div
+                            className="tableImgViewCard"
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => { setSelectedRecord(record); setShowAction(true); }}
+                        >
+                            <img src={`${key.IMAGE_URL}/AiImage/${record.image}`} alt="voice" />
+                        </div>
+                    );
+                }
+                return (
                     <button
                         className="table_extrabtns activeBtn"
-                        onClick={() => {
-                            setSelectedRecord(record);
-                            setShowAction(true)
-                        }}>
-                        {/* <img
-                            src={require("../../assets/images/editer.svg").default}
-                            className="img-fluid table_activity_img"
-                        />{" "} */}
-                        upload Image
+                        onClick={() => { setSelectedRecord(record); setShowAction(true); }}
+                    >
+                        Upload Image
                     </button>
-                </div>
-            ),
+                );
+            },
         },
-
-    ]
+    ];
 
     useEffect(() => {
         getAllVoices();
@@ -174,7 +195,6 @@ const VoicePage = () => {
                 setVoiceList(result);
                 setCount(count)
 
-                // Sync selectedVoiceIds with backend preferences
                 const alreadySelected = result
                     .filter(v => v.preference === true)
                     .map(v => v.voice_id);
@@ -183,22 +203,10 @@ const VoicePage = () => {
                     const merged = new Set([...prev, ...alreadySelected]);
                     return Array.from(merged);
                 });
-            } else {
-                if (error) {
-                } else if (message) {
-                }
             }
         } catch (err) {
             console.log("getAllVoices__err", err);
         }
-    };
-
-    const address_showing = (item) => {
-        if (item && item.toString().length > 10) {
-            var slice_front = item.slice(0, 9);
-            var slice_end = item.slice(item.length - 9, item.length + 1);
-            return slice_front + "...." + slice_end;
-        } else return item;
     };
 
     const handlePagination = async (index) => {
@@ -207,7 +215,7 @@ const VoicePage = () => {
             limit: index.page_size,
             search: index.filter_value,
         };
-        getAllVoices(reqData)
+        getAllVoices(reqData);
         setPageNumer(index.page_number);
         setLimit(index.page_size);
     };
@@ -216,7 +224,6 @@ const VoicePage = () => {
     const handleshowPreview = () => setShowPreview(true);
     const handleCloseAddUsers = () => setShowPreview(false);
 
-    // edid Exchange modal
     const [showEditUser, setShowEditUser] = useState(false);
     const [editRecord, setEditRecord] = useState();
     const [deleteRecord, setDeleteRecord] = useState({});
@@ -224,7 +231,7 @@ const VoicePage = () => {
     const handleShowEditUser = (record) => {
         setEditRecord(record);
         setShowEditUser(true);
-        history.push("/members/edit", { record: record })
+        history.push("/members/edit", { record: record });
     };
 
     const handleCloseEditUser = () => {
@@ -232,60 +239,23 @@ const VoicePage = () => {
         setEditRecord({});
     };
 
-    const loginNavigateHandle = () => {
-        history.push("/login-users")
-    };
-
-    const audioPreviewHandle = (record) => {
-        setSelectedAudioRecord(record);
-        handleshowPreview();
-    }
-
     const handleCloseAudioModal = () => {
         setShowAudioModal(false);
         setSelectedAudioRecord(null);
     };
-    // delete Exchange modal
 
     const [showDeleteUsers, setShowDeleteUsers] = useState(false);
-
-    const handleShowDeleteUsers = (record) => {
-        setDeleteRecord(record);
-        setShowDeleteUsers(true);
-    };
+    const handleShowDeleteUsers = (record) => { setDeleteRecord(record); setShowDeleteUsers(true); };
     const handleCloseDeleteUsers = () => setShowDeleteUsers(false);
-
-    const changeHandler = async (event) => {
-        let splitFile = event.target.files[0].name.split(".");
-        if (splitFile[splitFile.length - 1] != "csv") {
-            return false;
-        }
-
-        const valuesArray = [];
-        setFileName(event.target.files[0].name);
-        Papa.parse(event.target.files[0], {
-            header: true,
-            skipEmptyLines: true,
-            complete: async (results) => {
-                results.data.map((d) => {
-                    valuesArray.push(Object.values(d));
-                });
-                // Filtered Values
-                setFileValues(valuesArray);
-
-            },
-        });
-
-    };
 
     const config = {
         page_size: 10,
-        length_menu: [10, 20, 50],
+        length_menu: [10, 50, 100, 200],
         filename: "Emailtemplates",
         no_data_text: "No Email Templates found!",
         language: {
             length_menu: "Show _MENU_ result per page",
-            filter: "Filter by Voice ID...",
+            filter: "Filter in voices...",
             info: "Showing _START_ to _END_ of _TOTAL_ records",
             pagination: {
                 first: "First",
@@ -294,59 +264,42 @@ const VoicePage = () => {
                 last: "Last",
             },
         },
-        show_length_menu: false,
+        show_length_menu: true,
         show_filter: true,
         show_pagination: true,
         show_info: false,
     };
 
-    const extraButtons = [
-        {
-            className: "btn btn-primary buttons-pdf",
-            title: "Export TEst",
-            children: [
-                <span>
-                    <i
-                        className="glyphicon glyphicon-print fa fa-print"
-                        aria-hidden="true"></i>
-                </span>,
-            ],
-            onClick: (event) => { },
-        },
-        {
-            className: "btn btn-primary buttons-pdf",
-            title: "Export TEst",
-            children: [
-                <span>
-                    <i
-                        className="glyphicon glyphicon-print fa fa-print"
-                        aria-hidden="true"></i>
-                </span>,
-            ],
-            onClick: (event) => { },
-            onDoubleClick: (event) => { },
-        },
-    ];
+    const handleSyncVoices = async () => {
+        try {
+            setIsSyncing(true);
+            await getAllVoices({ sync: true });
+            CustomToastHandler({ msg: "Voices synced successfully" });
+        } catch (err) {
+            console.log("handleSyncVoices__err", err);
+        } finally {
+            setIsSyncing(false);
+        }
+    };
 
     const submitSelectedVoices = async () => {
         try {
             const { status, loading, error, message } = await UpdateSelectedVoices({ selectedVoiceIds: selectedVoiceIds });
-            setIsEdit(false)
+            setIsEdit(false);
             if (status) {
-                CustomToastHandler({ msg: message })
-                setErrors({})
+                CustomToastHandler({ msg: message });
+                setErrors({});
             } else {
                 if (error) {
                     setErrors(error);
                 } else if (message) {
-                    CustomToastHandler({ msg: message, type: "error" })
+                    CustomToastHandler({ msg: message, type: "error" });
                 }
             }
         } catch (err) {
             console.error(err);
-        }
-        finally {
-            setIsSubmitting(false); // re-enable button after backend responds
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -366,29 +319,34 @@ const VoicePage = () => {
                     </Col>
                     <Col xl={10} lg={12}>
                         <Header title={"Voices"} />
-
-                        <div className="rp_singleinput_holder mb-3">
-                        </div>
                         <div className="common_page_scroller pb-5 mt-3 mt-sm-5 pe-2">
                             <div className="exchange_table_holder dashboard_box rounded-3 mt-4 tabletop">
-                                {isEdit ? <button
-                                    className="exchange_tableFileUploader table_extrabtns mt-4 ms-4"
-                                    onClick={submitSelectedVoices}
-                                    disabled={!isEdit} // only disable while submitting
-                                >
-                                    <p className="cmn_extraBtnsLabel m-0">Submit</p>
-                                </button> : ""}
-
+                                <div className="d-flex justify-content-between align-items-center mt-4 px-4">
+                                    <div>
+                                        {isEdit && (
+                                            <button
+                                                className="exchange_tableFileUploader table_extrabtns"
+                                                onClick={submitSelectedVoices}
+                                            >
+                                                <p className="cmn_extraBtnsLabel m-0">Submit</p>
+                                            </button>
+                                        )}
+                                    </div>
+                                    <button
+                                        className="orange_small_primary"
+                                        onClick={handleSyncVoices}
+                                        disabled={isSyncing}
+                                    >
+                                        {isSyncing ? "Syncing..." : count === 0 ? "Upload Voices" : "Sync Voices"}
+                                    </button>
+                                </div>
                                 <ReactDatatable
                                     config={config}
                                     records={voiceList}
                                     columns={columns}
-                                    extraButtons={extraButtons}
                                     dynamic={true}
                                     total_record={count}
-                                    onChange={(e) => {
-                                        handlePagination(e);
-                                    }}
+                                    onChange={(e) => { handlePagination(e); }}
                                     filterRecords={(e) => { }}
                                     filterData={(e) => { }}
                                 />
