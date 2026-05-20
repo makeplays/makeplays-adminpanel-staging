@@ -15,9 +15,9 @@ if (env === "production") {
   key = {
     secretOrKey: process.env.REACT_APP_SECRET_OR_KEY,
     CRYPTO_SECRET_KEY: process.env.REACT_APP_CRYPTO_SECRET_KEY,
-    API_URL: "https://backend-makeplays.maticz.in/api/",
-    IMAGE_URL: "https://backend-makeplays.maticz.in/",
-    ADMIN_URL: "https://makeplays-adminpanel.pages.dev/",
+    API_URL: "https://api-staging.makeplays.ca/api/",
+    IMAGE_URL: "https://api-staging.makeplays.ca/",
+    ADMIN_URL: "https://admin-staging.makeplays.ca/",
   };
 } else {
   const API_URL = "http://localhost";
