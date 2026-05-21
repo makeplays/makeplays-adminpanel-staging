@@ -1,0 +1,5 @@
+name = "makeplays-adminpanel-staging"
+
+[assets]
+directory = "./build"
+not_found_handling = "single-page-application"
