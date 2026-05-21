@@ -1,4 +1,5 @@
 name = "makeplays-adminpanel-staging"
+compatibility_date = "2026-05-21"
 
 [assets]
 directory = "./build"
