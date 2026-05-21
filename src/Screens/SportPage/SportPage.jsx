@@ -3,17 +3,37 @@ import { Col, Container, Row } from "react-bootstrap";
 import Sidebar from "../../Components/Sidebar";
 import Header from "../../Components/Header";
 import ReactDatatable from "@ashvin27/react-datatable";
-import Exportexcel from "../../Components/Excelexport";
-import Papa from "papaparse";
 import { useHistory } from "react-router-dom";
-import { RiImportFill } from "react-icons/ri";
-import { Images } from "../../Images";
-import { SportPageModels } from "../../Modals/SportPageModels";
 import { IoIosAdd } from "react-icons/io";
-import { listAllSports, DeleteSports, ActivateSports } from '../../api/sportApi'
+import { SportPageModels } from "../../Modals/SportPageModels";
+import { listAllSports, DeleteSports, ActivateSports } from '../../api/sportApi';
 import key from "../../config/index";
 import { CustomToastHandler } from "../../hooks/useCustomToast";
 import { useSelector } from "react-redux";
+
+const DescriptionCell = ({ text }) => {
+  const [expanded, setExpanded] = useState(false);
+  if (!text) return <p className="text-center">--</p>;
+  return (
+    <div>
+      <p style={{
+        display: '-webkit-box',
+        WebkitLineClamp: expanded ? 'unset' : 2,
+        WebkitBoxOrient: 'vertical',
+        overflow: 'hidden',
+        margin: 0,
+      }}>
+        {text}
+      </p>
+      <span
+        onClick={() => setExpanded(!expanded)}
+        style={{ color: '#9D110C', cursor: 'pointer', fontSize: 12 }}
+      >
+        {expanded ? 'Read less' : 'Read more'}
+      </span>
+    </div>
+  );
+};
 
 const SportPage = () => {
   const [sportsList, setSportsList] = useState();
@@ -22,8 +42,6 @@ const SportPage = () => {
   const [count, setCount] = useState(0);
   const history = useHistory();
   const [errors, setErrors] = useState({});
-  const [fileName, setFileName] = useState();
-  const [fileValues, setFileValues] = useState();
 
   let user = useSelector((state) => state.isRun);
 
@@ -34,9 +52,7 @@ const SportPage = () => {
       className: "w_100 text-center",
       align: "center",
       sortable: false,
-      cell: (record, index) => {
-        return <p className="">{index + 1}</p>
-      },
+      cell: (record, index) => <p className="">{index + 1}</p>,
     },
     {
       key: "name",
@@ -50,90 +66,63 @@ const SportPage = () => {
       key: "description",
       text: "Description",
       sortable: true,
-      cell: (record) => (
-        <p className="text-center">{record?.description ? record.description : "--"}</p>
-      ),
-    },
-    {
-      key: "rulesAndRegulations",
-      text: "Rules And Regulations",
-      sortable: true,
-      cell: (record) => {
-        return (
-          <div
-            className="sportsrulesAndRegulations"
-            dangerouslySetInnerHTML={{ __html: record.rulesAndRegulations }}
-          />
-        );
-      }
+      cell: (record) => <DescriptionCell text={record?.description} />,
     },
     {
       key: "sport_logo",
       text: "Logo",
       sortable: false,
       cell: (record) => {
-        if (record?.image != "undefined") {
+        if (record?.image && record.image !== "undefined") {
           return (
             <div className="tableImgViewCard">
-              <img
-                src={`${key.IMAGE_URL}/Sports/${record.image}`}
-              />{" "}
+              <img src={`${key.IMAGE_URL}/Sports/${record.image}`} alt="sport logo" />
             </div>
           );
         }
+        return <p className="text-center">--</p>;
       },
-    }
-  ]
+    },
+  ];
 
-  // 2. Action column separately
   const actionColumn = {
     key: "action",
     text: "Action",
     className: "activity",
     align: "center",
     sortable: false,
-    cell: (record) => {
-      return (
-        <div>
-          <div className="d-flex justify-content-center align-items-center gap-2">
-            <button
-              className="cmn_plain_btn"
-              onClick={() => {
-                handleShowEditUser(record);
-              }}>
-              <img
-                src={require("../../assets/images/editer.svg").default}
-                className="img-fluid table_activity_img"
-              />{" "}
-            </button>
-            <button
-              className="cmn_plain_btn"
-              onClick={() => {
-                handleShowDeleteUsers(record);
-              }}>
-              <img
-                src={require("../../assets/images/trash.svg").default}
-                className="img-fluid table_activity_img"
-              />{" "}
-            </button>
-            {/*  */}
-          </div>
-          <div className="d-flex align-items-center justify-content-center">
-            <button
-              className="table_extrabtns activeBtn text-white"
-              onClick={() => {
-                onactivate(record._id);
-              }}>
-              {record.activate ? "DeActivate" : "Activate"}
-            </button>
-          </div>
-
-        </div>
-      );
-    }
+    cell: (record) => (
+      <div className="d-flex justify-content-center align-items-center gap-2">
+        <button
+          className="cmn_plain_btn"
+          onClick={() => handleShowEditUser(record)}
+        >
+          <img
+            src={require("../../assets/images/editer.svg").default}
+            className="img-fluid table_activity_img"
+            alt="edit"
+          />
+        </button>
+        <button
+          className="cmn_plain_btn"
+          onClick={() => handleShowDeleteUsers(record)}
+        >
+          <img
+            src={require("../../assets/images/trash.svg").default}
+            className="img-fluid table_activity_img"
+            alt="delete"
+          />
+        </button>
+        <button
+          className="table_extrabtns activeBtn text-white"
+          onClick={() => onactivate(record._id)}
+        >
+          {record.activate ? "DeActivate" : "Activate"}
+        </button>
+      </div>
+    ),
   };
 
-  // 3. Final columns (conditionally add "Action" if Admin)
   const columns = useMemo(() => {
     let cols = [...baseColumns];
     if (user?.accessLevel === "Admin") {
@@ -148,69 +137,47 @@ const SportPage = () => {
 
   const getAllSports = async (reqData) => {
     try {
-      let { status, loading, error, message, result, count } = await listAllSports(reqData);
+      const { status, error, message, result, count } = await listAllSports(reqData);
       if (status) {
         setSportsList(result);
-        setCount(count)
+        setCount(count);
       } else {
-        if (error) {
-        } else if (message) {
-        }
+        if (message) CustomToastHandler({ msg: message, type: "error" });
       }
     } catch (err) {
       console.log("getAllSports__err", err);
     }
   };
 
-  const address_showing = (item) => {
-    if (item && item.toString().length > 10) {
-      var slice_front = item.slice(0, 9);
-      var slice_end = item.slice(item.length - 9, item.length + 1);
-      return slice_front + "...." + slice_end;
-    } else return item;
-  };
-
   const handlePagination = async (index) => {
-    let reqData = {
+    const reqData = {
       page: index.page_number,
       limit: index.page_size,
       search: index.filter_value,
     };
-    getAllSports(reqData)
+    getAllSports(reqData);
     setPageNumer(index.page_number);
     setLimit(index.page_size);
-    setCount(count);
   };
 
-
-  const onactivate = async (data) => {
+  const onactivate = async (id) => {
     try {
-
-      const { status, message, error } = await ActivateSports({ id: data });
+      const { status, message, error } = await ActivateSports({ id });
       if (status) {
-        CustomToastHandler({ msg: message })
+        CustomToastHandler({ msg: message });
         setErrors({});
         getAllSports();
       } else {
-        if (error) {
-          setErrors(error);
-        } else if (message) {
-          CustomToastHandler({ msg: message, type: "error" })
-        }
+        if (error) setErrors(error);
+        else if (message) CustomToastHandler({ msg: message, type: "error" });
       }
     } catch (err) {
       console.log("onactivate__err", err);
     }
   };
 
-  // add modal
+  const handleShowAddUsers = () => history.push("/sports/add");
 
-  const [showAddUsers, setShowAddUsers] = useState(false);
-  const handleShowAddUsers = () => {
-    history.push("/sports/add")
-  };
-
-  // edid Exchange modal
   const [showEditUser, setShowEditUser] = useState(false);
   const [editRecord, setEditRecord] = useState();
   const [deleteRecord, setDeleteRecord] = useState({});
@@ -218,7 +185,7 @@ const SportPage = () => {
   const handleShowEditUser = (record) => {
     setEditRecord(record);
     setShowEditUser(true);
-    history.push("/sports/edit", { record: record })
+    history.push("/sports/edit", { record });
   };
 
   const handleCloseEditUser = () => {
@@ -226,48 +193,40 @@ const SportPage = () => {
     setEditRecord({});
   };
 
-  const loginNavigateHandle = () => {
-    history.push("/login-users")
-  };
-
-  // delete Exchange modal
   const [showDeleteUsers, setShowDeleteUsers] = useState(false);
-
   const handleShowDeleteUsers = (record) => {
     setDeleteRecord(record);
     setShowDeleteUsers(true);
   };
   const handleCloseDeleteUsers = () => setShowDeleteUsers(false);
 
-  const changeHandler = async (event) => {
-    let splitFile = event.target.files[0].name.split(".");
-    if (splitFile[splitFile.length - 1] != "csv") {
-      return false;
+  const handleConfirmDelete = async () => {
+    try {
+      const { status, message, error } = await DeleteSports({ sportsId: deleteRecord });
+      if (status) {
+        CustomToastHandler({ msg: message });
+        setErrors({});
+        getAllSports();
+      } else {
+        if (error) setErrors(error);
+        else if (message) CustomToastHandler({ msg: message, type: "error" });
+      }
+    } catch (err) {
+      console.log("handleConfirmDelete__error", err);
+      CustomToastHandler({ msg: "An error occurred while deleting the record.", type: "error" });
+    } finally {
+      handleCloseDeleteUsers();
     }
-    const valuesArray = [];
-
-    setFileName(event.target.files[0].name);
-
-    Papa.parse(event.target.files[0], {
-      header: true,
-      skipEmptyLines: true,
-      complete: async (results) => {
-        results.data.map((d) => {
-          valuesArray.push(Object.values(d));
-        });
-        setFileValues(valuesArray);
-      },
-    });
   };
 
   const config = {
     page_size: 10,
-    length_menu: [10, 20, 50],
-    filename: "Emailtemplates",
-    no_data_text: "No Email Templates found!",
+    length_menu: [10, 50, 100, 200],
+    filename: "Sports",
+    no_data_text: "No Sports found!",
     language: {
       length_menu: "Show _MENU_ result per page",
-      filter: "Filter by Name...",
+      filter: "Filter in sports...",
       info: "Showing _START_ to _END_ of _TOTAL_ records",
       pagination: {
         first: "First",
@@ -276,62 +235,10 @@ const SportPage = () => {
         last: "Last",
       },
     },
-    show_length_menu: false,
+    show_length_menu: true,
     show_filter: true,
-
     show_pagination: true,
     show_info: false,
-  };
-
-  const extraButtons = [
-    {
-      className: "btn btn-primary buttons-pdf",
-      title: "Export TEst",
-      children: [
-        <span>
-          <i
-            className="glyphicon glyphicon-print fa fa-print"
-            aria-hidden="true"></i>
-        </span>,
-      ],
-      onClick: (event) => { },
-    },
-    {
-      className: "btn btn-primary buttons-pdf",
-      title: "Export TEst",
-      children: [
-        <span>
-          <i
-            className="glyphicon glyphicon-print fa fa-print"
-            aria-hidden="true"></i>
-        </span>,
-      ],
-      onClick: (event) => { },
-      onDoubleClick: (event) => { },
-    },
-  ];
-
-  const handleConfirmDelete = async () => {
-    try {
-      const data = { sportsId: deleteRecord };
-      const { status, message, error } = await DeleteSports(data);
-      if (status) {
-        CustomToastHandler({ msg: message })
-        setErrors({});
-        getAllSports();
-      } else {
-        if (error) {
-          setErrors(error);
-        } else if (message) {
-          CustomToastHandler({ msg: message, type: "error" })
-        }
-      }
-    } catch (err) {
-      console.log("handleConfirmDelete__error", err);
-      CustomToastHandler({ msg: "An error occurred while deleting the record.", type: "error" })
-    } finally {
-      handleCloseDeleteUsers();
-    }
   };
 
   return (
@@ -343,39 +250,30 @@ const SportPage = () => {
             <Sidebar />
           </Col>
           <Col xl={10} lg={12}>
-            <Header title={"Team"} />
+            <Header title={"Sports"} />
             <div className="common_page_scroller pb-5 mt-3 mt-sm-5 pe-2">
               <div className="exchange_table_holder dashboard_box rounded-3 mt-4 tabletop">
-
                 <div className="d-flex justify-content-end align-items-center px-3 my-3">
-                  {/* <div className="cmn_extraBtnsHolder table_extrabtns d-flex justify-content-start align-items-center ">
-                    <Exportexcel excelData={sportsList} fileName={"users"} />
-                    <p className="m-0 cmn_extraBtnsLabel">Exports</p>
-                  </div> */}
-                  <div className="d-flex justif-content-end align-items-center gap-2">
-                    {user?.accessLevel && user?.accessLevel === "Admin" ?
-                      <button className="exchange_tableFileUploader table_extrabtns" onClick={handleShowAddUsers}>
-                        <IoIosAdd size={25} />
-                        <p className="cmn_extraBtnsLabel m-0">
-                          Add Sport
-                        </p>
-                      </button>
-                      : <></>}
-                  </div>
+                  {user?.accessLevel === "Admin" && (
+                    <button
+                      className="exchange_tableFileUploader table_extrabtns"
+                      onClick={handleShowAddUsers}
+                    >
+                      <IoIosAdd size={25} />
+                      <p className="cmn_extraBtnsLabel m-0">Add Sport</p>
+                    </button>
+                  )}
                 </div>
 
                 <ReactDatatable
                   config={config}
                   records={sportsList}
                   columns={columns}
-                  extraButtons={extraButtons}
                   dynamic={true}
                   total_record={count}
-                  onChange={(e) => {
-                    handlePagination(e);
-                  }}
-                  filterRecords={(e) => { }}
-                  filterData={(e) => { }}
+                  onChange={(e) => handlePagination(e)}
+                  filterRecords={(e) => {}}
+                  filterData={(e) => {}}
                 />
               </div>
             </div>
@@ -383,13 +281,13 @@ const SportPage = () => {
         </Row>
       </Container>
 
-      <SportPageModels.DeleteModal show={showDeleteUsers}
+      <SportPageModels.DeleteModal
+        show={showDeleteUsers}
         record={deleteRecord}
         getAllSports={getAllSports}
         handleClose={handleCloseDeleteUsers}
         onConfirm={handleConfirmDelete}
       />
-      {/* end of modals */}
     </>
   );
 };
