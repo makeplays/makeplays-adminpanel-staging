@@ -1,5 +1,5 @@
 let key = {};
-let env = "local";
+let env = "demo";
 if (env === "production") {
   //Set Production Config
 
