@@ -7,7 +7,7 @@ import { CustomToastHandler } from "../../hooks/useCustomToast";
 
 const CATEGORY_TYPE_MAP = {
   goal: ["Unassisted", "Assisted", "SecondAssist", "OwnGoal", "PenaltyGoal"],
-  penalty: ["General"],
+  penalty: ["Minor", "Major", "Misconduct", "Match", "Generic"],
   commentary: ["General"],
   lineup: ["General"],
   substitution: ["General"],
