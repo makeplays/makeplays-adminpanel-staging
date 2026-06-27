@@ -30,14 +30,18 @@ export const login = async (data, dispatch) => {
     const token = auth.session?.access_token;
     setAuthToken(token);
     localStorage.setItem("refreshtoken", auth.session?.refresh_token ?? "");
+    // NOTE: the sidebar/ConditionRoute gate on role==='superadmin' or
+    // accessLevel==='Admin', and treat a FALSY `restrictions` as "no limits".
+    // An empty array is truthy, so we leave restrictions undefined.
     dispatch({
       type: SET_AUTHENTICATION,
       authData: {
         isAuth: true,
+        isLoading: false,
         userId: profile.id,
-        restrictions: [],
-        accessLevel: "full",
-        role: "super_admin",
+        restrictions: undefined,
+        accessLevel: "Admin",
+        role: "superadmin",
         name: `${profile.first_name} ${profile.last_name}`.trim(),
         email: auth.user.email,
       },

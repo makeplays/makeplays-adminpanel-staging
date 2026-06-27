@@ -4,7 +4,7 @@
 // Keep ALL flags false until the owning wave's test break passes.
 // Mirrors makeplays-IOS/frontend/App/Actions/Constatnt/featureFlags.ts.
 export const USE_SUPABASE = {
-  auth: false, // Wave 1
+  auth: true, // Wave 1 (Supabase) — flip to false to fall back to legacy backend
   team: false, // Wave 2
   member: false, // Wave 3
   event: false, // Wave 4

@@ -18,6 +18,7 @@ import ResetNewPassword from "./Screens/ResetNewPassword";
 import OTPVerification from "./Screens/OTPVerification";
 import { getAuthToken } from "./lib/localStorage";
 import { SET_AUTHENTICATION } from "./constant";
+import { USE_SUPABASE } from "./config/featureFlags";
 
 // Private Screens
 import AllTeamPage from "./Screens/AllTeamPage/AllTeamPage";
@@ -147,20 +148,41 @@ function App() {
       token = token.replace("Bearer ", "");
       const decoded = jwt_decode(token);
       if (decoded) {
-        JoinRoom(decoded?._id?.toString());
-        dispatch({
-          type: SET_AUTHENTICATION,
-          authData: {
-            isAuth: true,
-            isLoading: false,
-            userId: decoded._id,
-            restrictions: decoded.restrictions,
-            accessLevel: decoded.accessLevel,
-            role: decoded.role,
-            email: decoded.email,
-            name: decoded.name,
-          },
-        });
+        // Supabase JWTs don't carry the legacy _id/role/accessLevel/restrictions
+        // claims. Every admin-panel user is a super_admin, so map the session to
+        // full access here (mirrors supabaseAuthAdmin.login).
+        if (USE_SUPABASE.auth) {
+          dispatch({
+            type: SET_AUTHENTICATION,
+            authData: {
+              isAuth: true,
+              isLoading: false,
+              userId: decoded.sub,
+              restrictions: undefined,
+              accessLevel: "Admin",
+              role: "superadmin",
+              email: decoded.email,
+              name: decoded.user_metadata
+                ? `${decoded.user_metadata.first_name ?? ""} ${decoded.user_metadata.last_name ?? ""}`.trim()
+                : decoded.email,
+            },
+          });
+        } else {
+          JoinRoom(decoded?._id?.toString());
+          dispatch({
+            type: SET_AUTHENTICATION,
+            authData: {
+              isAuth: true,
+              isLoading: false,
+              userId: decoded._id,
+              restrictions: decoded.restrictions,
+              accessLevel: decoded.accessLevel,
+              role: decoded.role,
+              email: decoded.email,
+              name: decoded.name,
+            },
+          });
+        }
       }
     } else {
       dispatch({
