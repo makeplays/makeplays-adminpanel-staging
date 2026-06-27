@@ -5,9 +5,12 @@ import { setAuthorization } from "../config/axios";
 import { logoutUser, setAuthToken } from "../lib/localStorage";
 import { decodeJwt } from "../actions/jsonWebToken";
 import { Customdecryptdata, Customencryptdata } from "../lib/CustomData";
+import { USE_SUPABASE } from "../config/featureFlags";
+import * as sbAdmin from "../config/supabaseAuthAdmin";
 var secretKey = crypto.cryptoSecretKey;
 
 export const login = async (data, dispatch) => {
+  if (USE_SUPABASE.auth) return sbAdmin.login(data, dispatch);
   try {
     const encryptedData = Customencryptdata(data, secretKey);
     const respData = await axios({
@@ -36,6 +39,7 @@ export const login = async (data, dispatch) => {
 };
 
 export const refreshToken = async () => {
+  if (USE_SUPABASE.auth) return sbAdmin.refreshToken();
   try {
     const refreshToken = localStorage.getItem("refreshtoken");
     if (!refreshToken) {
@@ -256,6 +260,7 @@ export const resetPassword = async (data) => {
 };
 
 export const getProfile = async () => {
+  if (USE_SUPABASE.auth) return sbAdmin.getProfile();
   try {
     const respData = await axios({
       url: `/admin/getProfile`,
@@ -673,6 +678,7 @@ export const UpdateSelectedVoices = async (data) => {
 };
 
 export const getContactUsData = async (reqData) => {
+  if (USE_SUPABASE.auth) return sbAdmin.getContactUs(reqData);
   try {
     const respData = await axios({
       url: `/admin/getContactUs`,
