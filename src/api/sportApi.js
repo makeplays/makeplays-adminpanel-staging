@@ -5,9 +5,12 @@ import { setAuthorization } from '../config/axios';
 import { logoutUser, setAuthToken } from '../lib/localStorage';
 import { decodeJwt } from '../actions/jsonWebToken';
 import { Customdecryptdata, Customencryptdata } from '../lib/CustomData';
+import { USE_SUPABASE } from '../config/featureFlags';
+import * as sb from '../config/supabaseTeamSport';
 var secretKey = crypto.cryptoSecretKey
 
 export const AddSports = async (data) => {
+    if (USE_SUPABASE.team) return sb.AddSports(data);
     try {
         const respData = await axios({
             'url': `/admin/addSports`,
@@ -34,6 +37,7 @@ export const AddSports = async (data) => {
 }
 
 export const listAllSports = async (reqData) => {
+    if (USE_SUPABASE.team) return sb.listAllSports(reqData);
     try {
         const respData = await axios({
             'url': `/admin/getSports`,
@@ -62,6 +66,7 @@ export const listAllSports = async (reqData) => {
 }
 
 export const EditSports = async (data) => {
+    if (USE_SUPABASE.team) return sb.EditSports(data);
     try {
         const respData = await axios({
             'url': `/admin/updateSports`,
@@ -88,6 +93,7 @@ export const EditSports = async (data) => {
 }
 
 export const DeleteSports = async (data) => {
+    if (USE_SUPABASE.team) return sb.DeleteSports(data);
     try {
         const encryptedData = Customencryptdata(data, secretKey)
         const respData = await axios({
@@ -115,6 +121,7 @@ export const DeleteSports = async (data) => {
 }
 
 export const ActivateSports = async (data) => {
+    if (USE_SUPABASE.team) return sb.ActivateSports(data);
     try {
         const encryptedData = Customencryptdata(data, secretKey)
         const respData = await axios({

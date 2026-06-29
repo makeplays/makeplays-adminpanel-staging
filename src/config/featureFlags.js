@@ -5,7 +5,7 @@
 // Mirrors makeplays-IOS/frontend/App/Actions/Constatnt/featureFlags.ts.
 export const USE_SUPABASE = {
   auth: true, // Wave 1 (Supabase) — flip to false to fall back to legacy backend
-  team: false, // Wave 2
+  team: true, // Wave 2 (Supabase)
   member: false, // Wave 3
   event: false, // Wave 4
   volunteer: false, // Wave 5
