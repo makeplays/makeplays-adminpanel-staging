@@ -2,6 +2,38 @@
 // Wired into src/api/sportApi.js + teamApi.js behind USE_SUPABASE.team.
 // Returns legacy-shaped (Mongo) rows so the admin screens stay unchanged.
 import { supabase } from "./supabase";
+import crypto from "./crypto";
+import { Customdecryptdata } from "../lib/CustomData";
+
+const secretKey = crypto.cryptoSecretKey;
+
+// Admin write pages post FormData { token: <crypto-js encrypted fields>, image?: File }.
+// Decrypt the token (we're dropping crypto-js, but the screens still encrypt) and
+// pull out any uploaded image file.
+function parseAdminPayload(data) {
+  if (typeof FormData !== "undefined" && data instanceof FormData) {
+    const token = data.get("token");
+    const image = data.get("image");
+    const fields = token ? Customdecryptdata(token, secretKey) : {};
+    return { fields: fields || {}, image: image && image.name ? image : null };
+  }
+  return { fields: data || {}, image: null };
+}
+
+// Upload a sport logo to the public team-logos bucket under the admin's uid folder
+// (satisfies the owner-folder storage policy). Returns a public URL or undefined.
+async function uploadSportImage(image) {
+  if (!image) return undefined;
+  const { data: u } = await supabase.auth.getUser();
+  if (!u?.user) return undefined;
+  const path = `${u.user.id}/sport-${Date.now()}-${image.name}`;
+  const { error } = await supabase.storage.from("team-logos").upload(path, image, {
+    contentType: image.type || "image/jpeg",
+    upsert: true,
+  });
+  if (error) return undefined;
+  return supabase.storage.from("team-logos").getPublicUrl(path).data.publicUrl;
+}
 
 const sportRow = (s) =>
   s && {
@@ -23,16 +55,18 @@ const teamRow = (t) =>
     createdAt: t.created_at, updatedAt: t.updated_at,
   };
 
-const idOf = (d) => d?.id || d?._id || d?.teamId || d?.sportId;
+const idOf = (d) => d?.id || d?._id || d?.teamId || d?.sportId || d?.sportsId;
 
 // ─── Sports ────────────────────────────────────────────────────────────────
 export const AddSports = async (data) => {
+  const { fields, image } = parseAdminPayload(data);
+  const imageUrl = await uploadSportImage(image);
   const { error } = await supabase.from("sports").insert({
-    name: data.name ?? "",
-    image: data.image ?? "",
-    description: data.description ?? "",
-    rules_and_regulations: data.rulesAndRegulations ?? data.rules_and_regulations ?? "",
-    activate: data.activate ?? true,
+    name: fields.name ?? "",
+    image: imageUrl ?? fields.image ?? "",
+    description: fields.description ?? "",
+    rules_and_regulations: fields.rulesAndRegulations ?? fields.rules_and_regulations ?? "",
+    activate: fields.activate ?? true,
   });
   if (error) return { status: false, message: error.message };
   return { status: true, message: "Sport added successfully" };
@@ -50,12 +84,16 @@ export const listAllSports = async (reqData = {}) => {
 };
 
 export const EditSports = async (data) => {
-  const id = idOf(data);
+  const { fields, image } = parseAdminPayload(data);
+  const id = idOf(fields);
+  if (!id) return { status: false, message: "Sport id missing" };
   const update = { updated_at: new Date().toISOString() };
-  if (data.name !== undefined) update.name = data.name;
-  if (data.image !== undefined) update.image = data.image;
-  if (data.description !== undefined) update.description = data.description;
-  if (data.rulesAndRegulations !== undefined) update.rules_and_regulations = data.rulesAndRegulations;
+  if (fields.name !== undefined) update.name = fields.name;
+  if (fields.description !== undefined) update.description = fields.description;
+  if (fields.rulesAndRegulations !== undefined) update.rules_and_regulations = fields.rulesAndRegulations;
+  const imageUrl = await uploadSportImage(image);
+  if (imageUrl) update.image = imageUrl;
+  else if (fields.image !== undefined) update.image = fields.image;
   const { error } = await supabase.from("sports").update(update).eq("id", id);
   if (error) return { status: false, message: error.message };
   return { status: true, message: "Sport updated successfully" };
@@ -97,14 +135,16 @@ export const listAllTeams = async () => {
 };
 
 export const EditTeams = async (data) => {
-  const id = idOf(data);
+  const { fields } = parseAdminPayload(data);
+  const id = idOf(fields);
+  if (!id) return { status: false, message: "Team id missing" };
   const update = { updated_at: new Date().toISOString() };
   const map = {
     teamName: "name", ageCriteria: "age_criteria", leagueOrClubName: "league_or_club_name",
     location: "location", country: "country", state: "state", city: "city",
     coachName: "coach_name", coachEmail: "coach_email", sportId: "sport_id",
   };
-  for (const [src, col] of Object.entries(map)) if (data[src] !== undefined) update[col] = data[src];
+  for (const [src, col] of Object.entries(map)) if (fields[src] !== undefined) update[col] = fields[src];
   const { error } = await supabase.from("teams").update(update).eq("id", id);
   if (error) return { status: false, message: error.message };
   return { status: true, message: "Team updated successfully" };
