@@ -8,6 +8,7 @@ import { IoIosAdd } from "react-icons/io";
 import { SportPageModels } from "../../Modals/SportPageModels";
 import { listAllSports, DeleteSports, ActivateSports } from '../../api/sportApi';
 import key from "../../config/index";
+import { assetUrl } from "../../lib/assetUrl";
 import { CustomToastHandler } from "../../hooks/useCustomToast";
 import { useSelector } from "react-redux";
 
@@ -76,7 +77,7 @@ const SportPage = () => {
         if (record?.image && record.image !== "undefined") {
           return (
             <div className="tableImgViewCard">
-              <img src={`${key.IMAGE_URL}/Sports/${record.image}`} alt="sport logo" />
+              <img src={assetUrl(record.image, `${key.IMAGE_URL}/Sports/`)} alt="sport logo" />
             </div>
           );
         }

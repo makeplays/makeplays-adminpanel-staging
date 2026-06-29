@@ -9,6 +9,7 @@ import { useHistory } from "react-router-dom";
 import { AllTeamModels } from "../../Modals/AllTeamPageModels";
 import { listAllTeam, DeleteTeam } from '../../api/teamApi'
 import key from "../../config/index";
+import { assetUrl } from "../../lib/assetUrl";
 import { CustomToastHandler } from "../../hooks/useCustomToast";
 import { useSelector } from "react-redux";
 
@@ -97,7 +98,7 @@ const AllTeamPage = () => {
             <div className="tableImgViewCard">
               {record.teamLogo ?
                 <img
-                  src={`${key.IMAGE_URL}/Team/${record.teamLogo}`}
+                  src={assetUrl(record.teamLogo, `${key.IMAGE_URL}/Team/`)}
                 /> : <p>No Image</p>}{" "}
             </div>
           );
