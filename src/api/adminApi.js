@@ -70,6 +70,7 @@ export const refreshToken = async () => {
 };
 
 export const getUser = async (reqData) => {
+  if (USE_SUPABASE.auth) return sbAdmin.getUser(reqData);
   try {
     const respData = await axios({
       url: `/admin/getuserData`,

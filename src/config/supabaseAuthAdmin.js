@@ -87,3 +87,14 @@ export const getContactUs = async (reqData = {}) => {
   if (error) return { status: false, message: error.message };
   return { status: true, message: "Listed successfully", count: count ?? 0, result: data };
 };
+
+// Admin Users list — joins profiles + auth.users email via SECURITY DEFINER RPC.
+export const getUser = async (reqData = {}) => {
+  const { data, error } = await supabase.rpc("admin_list_users", {
+    p_page: Number(reqData?.page) || 1,
+    p_limit: Number(reqData?.limit) || 10,
+    p_search: reqData?.search || reqData?.firstname || "",
+  });
+  if (error) return { status: false, message: error.message };
+  return { status: true, count: data?.count ?? 0, message: "Listed successfully", result: data?.users ?? [] };
+};
