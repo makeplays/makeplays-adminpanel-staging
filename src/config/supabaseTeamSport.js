@@ -55,7 +55,7 @@ const teamRow = (t) =>
     createdAt: t.created_at, updatedAt: t.updated_at,
   };
 
-const idOf = (d) => d?.id || d?._id || d?.teamId || d?.sportId || d?.sportsId;
+const idOf = (d) => d?.id || d?._id || d?.teamId || d?.sportId || d?.sportsId || d?.memberId;
 
 // ─── Sports ────────────────────────────────────────────────────────────────
 export const AddSports = async (data) => {
@@ -161,4 +161,54 @@ export const DeleteTeam = async (data) => {
   const { error } = await supabase.from("teams").update({ team_status: false }).eq("id", idOf(data));
   if (error) return { status: false, message: error.message };
   return { status: true, message: "Team deleted successfully" };
+};
+
+// ─── Members (admin) ─────────────────────────────────────────────────────────
+const memberRow = (m) =>
+  m && {
+    _id: m.id, teamId: m.team_id, teamName: m.teams?.name ?? "",
+    firstname: m.firstname, lastname: m.lastname, email: m.email,
+    position: m.position, number: m.number, phonenumber: m.phonenumber,
+    isMinor: m.is_minor, guardianName: m.guardian_name, guardianEmail: m.guardian_email,
+    relationship: m.relationship, address: m.address, city: m.city, country: m.country,
+    province: m.province, postalcode: m.postalcode, colorCode: m.color_code, type: m.type,
+    createdAt: m.created_at, updatedAt: m.updated_at,
+  };
+
+export const listAllMember = async (reqData = {}) => {
+  const page = Number(reqData.page) || 1;
+  const limit = Number(reqData.limit) || 10;
+  let q = supabase.from("members").select("*, teams(name)", { count: "exact" })
+    .eq("type", "player").order("created_at", { ascending: false });
+  if (reqData.teamId) q = q.eq("team_id", reqData.teamId);
+  const search = reqData.search || reqData.firstname;
+  if (search) q = q.ilike("firstname", `%${search}%`);
+  q = q.range((page - 1) * limit, page * limit - 1);
+  const { data, count, error } = await q;
+  if (error) return { status: false, message: error.message };
+  return { status: true, count: count ?? 0, message: "Listed successfully", result: (data ?? []).map(memberRow) };
+};
+
+export const Editmember = async (data) => {
+  const { fields } = parseAdminPayload(data);
+  const id = fields.memberId || fields.id || fields._id;
+  if (!id) return { status: false, message: "Member id missing" };
+  const update = { updated_at: new Date().toISOString() };
+  const map = {
+    firstname: "firstname", lastname: "lastname", email: "email", position: "position",
+    phonenumber: "phonenumber", address: "address", city: "city", country: "country",
+    province: "province", colorCode: "color_code", guardianName: "guardian_name",
+    guardianEmail: "guardian_email", relationship: "relationship",
+  };
+  for (const [src, col] of Object.entries(map)) if (fields[src] !== undefined) update[col] = fields[src];
+  if (fields.number !== undefined) update.number = Number(fields.number) || 0;
+  const { error } = await supabase.from("members").update(update).eq("id", id);
+  if (error) return { status: false, message: error.message };
+  return { status: true, message: "Member updated successfully" };
+};
+
+export const DeleteMember = async (data) => {
+  const { error } = await supabase.from("members").delete().eq("id", idOf(data));
+  if (error) return { status: false, message: error.message };
+  return { status: true, message: "Member deleted successfully" };
 };

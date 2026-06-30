@@ -6,7 +6,7 @@
 export const USE_SUPABASE = {
   auth: true, // Wave 1 (Supabase) — flip to false to fall back to legacy backend
   team: true, // Wave 2 (Supabase)
-  member: false, // Wave 3
+  member: true, // Wave 3 (Supabase)
   event: false, // Wave 4
   volunteer: false, // Wave 5
   announcement: false, // Wave 6 (voices, voice templates, announcement templates)
