@@ -317,6 +317,7 @@ export const EditProfiles = async (data) => {
 };
 
 export const listAllVoices = async (reqData) => {
+  if (USE_SUPABASE.voice && !reqData?.sync) return sbEvent.listAllVoices(reqData);
   try {
     if (reqData?.sync) {
       await axios({ url: `/user/getVoiceListAndSave`, method: "get" });

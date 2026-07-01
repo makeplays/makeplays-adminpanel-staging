@@ -52,6 +52,31 @@ export const DeleteEvent = async (data) => {
   return { status: true, message: 'Event deleted successfully.' };
 };
 
+export const listAllVoices = async (reqData = {}) => {
+  const page = Number(reqData.page) || 1;
+  const limit = Number(reqData.limit) || 10;
+  let q = supabase.from('voices').select('*', { count: 'exact' }).order('name');
+  const search = reqData.search || reqData.name;
+  if (search) q = q.ilike('name', `%${search}%`);
+  q = q.range((page - 1) * limit, page * limit - 1);
+  const { data, count, error } = await q;
+  if (error) return { status: false, message: error.message };
+  return {
+    status: true,
+    count: count ?? 0,
+    message: 'Listed successfully',
+    result: (data ?? []).map((v) => ({
+      _id: v.id,
+      voice_id: v.voice_id,
+      name: v.name,
+      description: v.description,
+      preview_url: v.preview_url,
+      image: v.image,
+      preference: v.preference,
+    })),
+  };
+};
+
 export const getAnnouncementTemplates = async (reqData = {}) => {
   const page = Number(reqData.page) || 1;
   const limit = Number(reqData.limit) || 10;
