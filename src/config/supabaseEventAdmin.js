@@ -90,31 +90,48 @@ const parsePhrase = (phrase = '') =>
     })
     .filter(Boolean);
 
+// Fire the template-audio sync (all voices, storage-verified) — best-effort so a
+// slow/failed generation never blocks the save from reporting success.
+const syncTemplateAudios = async (templateId) => {
+  try { await supabase.functions.invoke('announcement-tts', { body: { templateId } }); }
+  catch (e) { console.log('announcement-tts sync err', e?.message || e); }
+};
+
 export const addAnnouncementTemplate = async (data = {}) => {
-  const { error } = await supabase.from('announcement_templates').insert({
+  const { data: row, error } = await supabase.from('announcement_templates').insert({
     category: data.category,
     type: data.type,
     phrase: data.phrase,
     parsed_chunks: parsePhrase(data.phrase),
     status: data.status || 'active',
-  });
+  }).select('id').single();
   if (error) return { status: false, message: error.message };
+  await syncTemplateAudios(row.id); // generate chunk audios for all voices
   return { status: true, message: 'Announcement template added successfully' };
 };
 
 export const updateAnnouncementTemplate = async (data = {}) => {
   const id = data._id || data.id || data.templateId;
   if (!id) return { status: false, message: 'Template id missing' };
+  const { data: existing } = await supabase
+    .from('announcement_templates').select('phrase, parsed_chunks').eq('id', id).single();
   const update = { updated_at: new Date().toISOString() };
   if (data.category !== undefined) update.category = data.category;
   if (data.type !== undefined) update.type = data.type;
   if (data.status !== undefined) update.status = data.status;
-  if (data.phrase !== undefined) {
+  const phraseChanged = data.phrase !== undefined && data.phrase !== existing?.phrase;
+  if (phraseChanged) {
     update.phrase = data.phrase;
-    update.parsed_chunks = parsePhrase(data.phrase); // re-parse; audios regen lazily
+    // re-parse, carrying over existing audioUrl for unchanged text values
+    const prevAudio = {};
+    for (const c of existing?.parsed_chunks || []) if (c.type === 'text') prevAudio[c.value] = c.audioUrl || {};
+    update.parsed_chunks = parsePhrase(data.phrase).map((c) =>
+      c.type === 'text' ? { ...c, audioUrl: prevAudio[c.value] || {} } : c,
+    );
   }
   const { error } = await supabase.from('announcement_templates').update(update).eq('id', id);
   if (error) return { status: false, message: error.message };
+  await syncTemplateAudios(id); // verify storage + generate any missing chunk/voice audios
   return { status: true, message: 'Announcement template updated successfully' };
 };
 
