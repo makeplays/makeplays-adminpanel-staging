@@ -377,6 +377,7 @@ export const GetSelectedVoices = async () => {
 };
 
 export const listAllLanguages = async (reqData) => {
+  if (USE_SUPABASE.voice) return sbEvent.listAllLanguages(reqData);
   try {
     const respData = await axios({
       url: `/admin/getLanguage`,

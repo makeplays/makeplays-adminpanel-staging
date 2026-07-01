@@ -142,6 +142,30 @@ export const deleteAnnouncementTemplate = async (data = {}) => {
   return { status: true, message: 'Announcement template deleted successfully' };
 };
 
+// Languages catalog (empty in the source Mongo too; read for parity, no backend).
+export const listAllLanguages = async (reqData = {}) => {
+  const page = Number(reqData.page) || 1;
+  const limit = Number(reqData.limit) || 10;
+  let q = supabase.from('languages').select('*', { count: 'exact' }).order('name');
+  const search = reqData.search || reqData.name;
+  if (search) q = q.ilike('name', `%${search}%`);
+  q = q.range((page - 1) * limit, page * limit - 1);
+  const { data, count, error } = await q;
+  if (error) return { status: false, message: error.message };
+  return {
+    status: true,
+    count: count ?? 0,
+    message: 'Listed successfully',
+    result: (data ?? []).map((l) => ({
+      _id: l.id,
+      name: l.name,
+      model_id: l.model_id,
+      languages: l.languages,
+      description: l.description,
+    })),
+  };
+};
+
 export const getAnnouncementTemplates = async (reqData = {}) => {
   const page = Number(reqData.page) || 1;
   const limit = Number(reqData.limit) || 10;
