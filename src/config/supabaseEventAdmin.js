@@ -77,6 +77,54 @@ export const listAllVoices = async (reqData = {}) => {
   };
 };
 
+// Parse a phrase into text/variable chunks (parity with the backend). Text
+// chunks carry an empty audioUrl map — regenerated per voice by the live screen.
+const parsePhrase = (phrase = '') =>
+  String(phrase)
+    .split(/(\{[^}]+\})/g)
+    .map((p) => {
+      const t = (p || '').trim();
+      if (!t) return null;
+      if (/^\{[^}]+\}$/.test(t)) return { type: 'variable', value: t.slice(1, -1) };
+      return { type: 'text', value: t, audioUrl: {} };
+    })
+    .filter(Boolean);
+
+export const addAnnouncementTemplate = async (data = {}) => {
+  const { error } = await supabase.from('announcement_templates').insert({
+    category: data.category,
+    type: data.type,
+    phrase: data.phrase,
+    parsed_chunks: parsePhrase(data.phrase),
+    status: data.status || 'active',
+  });
+  if (error) return { status: false, message: error.message };
+  return { status: true, message: 'Announcement template added successfully' };
+};
+
+export const updateAnnouncementTemplate = async (data = {}) => {
+  const id = data._id || data.id || data.templateId;
+  if (!id) return { status: false, message: 'Template id missing' };
+  const update = { updated_at: new Date().toISOString() };
+  if (data.category !== undefined) update.category = data.category;
+  if (data.type !== undefined) update.type = data.type;
+  if (data.status !== undefined) update.status = data.status;
+  if (data.phrase !== undefined) {
+    update.phrase = data.phrase;
+    update.parsed_chunks = parsePhrase(data.phrase); // re-parse; audios regen lazily
+  }
+  const { error } = await supabase.from('announcement_templates').update(update).eq('id', id);
+  if (error) return { status: false, message: error.message };
+  return { status: true, message: 'Announcement template updated successfully' };
+};
+
+export const deleteAnnouncementTemplate = async (data = {}) => {
+  const id = data._id || data.id;
+  const { error } = await supabase.from('announcement_templates').delete().eq('id', id);
+  if (error) return { status: false, message: error.message };
+  return { status: true, message: 'Announcement template deleted successfully' };
+};
+
 export const getAnnouncementTemplates = async (reqData = {}) => {
   const page = Number(reqData.page) || 1;
   const limit = Number(reqData.limit) || 10;

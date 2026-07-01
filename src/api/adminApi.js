@@ -610,9 +610,10 @@ export const getAnnouncementTemplates = async (reqData) => {
 };
 
 export const addAnnouncementTemplate = async (data) => {
+  if (USE_SUPABASE.event) return sbEvent.addAnnouncementTemplate(data);
   try {
     console.log('addAnnouncementTemplate-data', data);
-    
+
     const encryptedData = Customencryptdata(data, secretKey);
     console.log('addAnnouncementTemplate-encryptedData', encryptedData);
     const respData = await axios({ url: `/admin/addAnnouncementTemplate`, method: "post", data: { token: encryptedData } });
@@ -627,6 +628,7 @@ export const addAnnouncementTemplate = async (data) => {
 };
 
 export const updateAnnouncementTemplate = async (data) => {
+  if (USE_SUPABASE.event) return sbEvent.updateAnnouncementTemplate(data);
   try {
     const encryptedData = Customencryptdata(data, secretKey);
     const respData = await axios({ url: `/admin/updateAnnouncementTemplate`, method: "post", data: { token: encryptedData } });
@@ -641,6 +643,7 @@ export const updateAnnouncementTemplate = async (data) => {
 };
 
 export const deleteAnnouncementTemplate = async (data) => {
+  if (USE_SUPABASE.event) return sbEvent.deleteAnnouncementTemplate(data);
   try {
     const encryptedData = Customencryptdata(data, secretKey);
     const respData = await axios({ url: `/admin/deleteAnnouncementTemplate`, method: "post", data: { token: encryptedData } });
