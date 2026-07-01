@@ -7,6 +7,7 @@ import { decodeJwt } from "../actions/jsonWebToken";
 import { Customdecryptdata, Customencryptdata } from "../lib/CustomData";
 import { USE_SUPABASE } from "../config/featureFlags";
 import * as sbAdmin from "../config/supabaseAuthAdmin";
+import * as sbEvent from "../config/supabaseEventAdmin";
 var secretKey = crypto.cryptoSecretKey;
 
 export const login = async (data, dispatch) => {
@@ -594,6 +595,7 @@ export const ActivateSubadmin = async (data) => {
 
 // Announcement Template
 export const getAnnouncementTemplates = async (reqData) => {
+  if (USE_SUPABASE.event) return sbEvent.getAnnouncementTemplates(reqData);
   try {
     const respData = await axios({ url: `/admin/getAnnouncementTemplates`, method: "get", params: reqData });
     const decryptedData = Customdecryptdata(respData?.data, secretKey);

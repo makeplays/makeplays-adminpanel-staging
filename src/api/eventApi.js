@@ -5,9 +5,12 @@ import { setAuthorization } from '../config/axios';
 import { logoutUser, setAuthToken } from '../lib/localStorage';
 import { decodeJwt } from '../actions/jsonWebToken';
 import { Customdecryptdata, Customencryptdata } from '../lib/CustomData';
+import { USE_SUPABASE } from '../config/featureFlags';
+import * as sbEvent from '../config/supabaseEventAdmin';
 var secretKey = crypto.cryptoSecretKey
 
 export const listAllEvent = async (reqData) => {
+    if (USE_SUPABASE.event) return sbEvent.listAllEvent(reqData);
     try {
         const respData = await axios({
             'url': `/admin/getAllTeamEvents`,
@@ -91,6 +94,7 @@ export const getOpponetTeams = async (data) => {
 }
 
 export const DeleteEvent = async (data) => {
+    if (USE_SUPABASE.event) return sbEvent.DeleteEvent(data);
     try {
         const encryptedData = Customencryptdata(data, secretKey)
         const respData = await axios({
