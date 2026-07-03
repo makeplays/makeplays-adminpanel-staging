@@ -12,7 +12,7 @@ export const USE_SUPABASE = {
   voice: true, // Wave 6a (AI voice catalog) — Supabase
   announcement: false, // Wave 6b (voice templates, announcement templates)
   playlist: false, // Wave 7
-  admin: false, // Wave 9 (plans, versions, faq, broadcast, cms, email templates)
+  admin: true, // Wave 9 (Supabase) — faq/cms/broadcast/email templates/dashboard counts
 };
 
 export default USE_SUPABASE;

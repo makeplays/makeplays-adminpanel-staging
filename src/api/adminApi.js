@@ -8,6 +8,7 @@ import { Customdecryptdata, Customencryptdata } from "../lib/CustomData";
 import { USE_SUPABASE } from "../config/featureFlags";
 import * as sbAdmin from "../config/supabaseAuthAdmin";
 import * as sbEvent from "../config/supabaseEventAdmin";
+import * as sbCommon from "../config/supabaseAdminCommon";
 var secretKey = crypto.cryptoSecretKey;
 
 export const login = async (data, dispatch) => {
@@ -97,6 +98,7 @@ export const getUser = async (reqData) => {
 };
 
 export const getEmailTemplate = async () => {
+  if (USE_SUPABASE.admin) return sbCommon.getEmailTemplate();
   try {
     const respData = await axios({
       url: `/admin/fetch_emailTemplate`,
@@ -120,6 +122,7 @@ export const getEmailTemplate = async () => {
 };
 
 export const EditTemplate = async (data, dispatch) => {
+  if (USE_SUPABASE.admin) return sbCommon.EditTemplate(data);
   try {
     const encryptedData = Customencryptdata(data, secretKey);
     const respData = await axios({
@@ -715,6 +718,7 @@ export const getContactUsData = async (reqData) => {
 };
 
 export const listCounts = async () => {
+  if (USE_SUPABASE.admin) return sbCommon.listCounts();
   try {
     const respData = await axios({
       url: `/admin/getDashboardData`,
@@ -741,6 +745,7 @@ export const listCounts = async () => {
 };
 
 export const getCmsList = async (reqData) => {
+  if (USE_SUPABASE.admin) return sbCommon.getCmsList(reqData);
   try {
     const respData = await axios({
       url: `/admin/getCms`,
@@ -769,6 +774,7 @@ export const getCmsList = async (reqData) => {
 };
 
 export const EditCms = async (data) => {
+  if (USE_SUPABASE.admin) return sbCommon.EditCms(data);
   try {
     const encryptedData = Customencryptdata(data, secretKey);
     const respData = await axios({
@@ -796,6 +802,7 @@ export const EditCms = async (data) => {
 };
 
 export const AddBroadcast = async (data) => {
+  if (USE_SUPABASE.admin) return sbCommon.AddBroadcast(data);
   try {
     const respData = await axios({
       url: `/admin/addBroadcast`,
@@ -822,6 +829,7 @@ export const AddBroadcast = async (data) => {
 };
 
 export const listAllBroadCast = async (reqData) => {
+  if (USE_SUPABASE.admin) return sbCommon.listAllBroadCast(reqData);
   try {
     const respData = await axios({
       url: `/admin/getBroadcastNotification`,
@@ -850,6 +858,7 @@ export const listAllBroadCast = async (reqData) => {
 };
 
 export const DeleteBroadCastNotify = async (data) => {
+  if (USE_SUPABASE.admin) return sbCommon.DeleteBroadCastNotify(data);
   try {
     const encryptedData = Customencryptdata(data, secretKey);
     const respData = await axios({
@@ -877,6 +886,7 @@ export const DeleteBroadCastNotify = async (data) => {
 };
 
 export const ResendBroadCastNotify = async (data) => {
+  if (USE_SUPABASE.admin) return sbCommon.ResendBroadCastNotify(data);
   try {
     const encryptedData = Customencryptdata(data, secretKey);
     const respData = await axios({
@@ -931,6 +941,7 @@ export const ReplyContactUs = async (data) => {
 };
 
 export const listAllFaq = async (reqData) => {
+  if (USE_SUPABASE.admin) return sbCommon.listAllFaq(reqData);
   try {
     const respData = await axios({
       url: `/admin/getFaq`,
@@ -959,6 +970,7 @@ export const listAllFaq = async (reqData) => {
 };
 
 export const DeleteFaq = async (data) => {
+  if (USE_SUPABASE.admin) return sbCommon.DeleteFaq(data);
   try {
     const encryptedData = Customencryptdata(data, secretKey);
     const respData = await axios({
@@ -986,6 +998,7 @@ export const DeleteFaq = async (data) => {
 };
 
 export const AddFaq = async (data) => {
+  if (USE_SUPABASE.admin) return sbCommon.AddFaq(data);
   try {
     const respData = await axios({
       url: `/admin/addFaq`,
@@ -1012,6 +1025,7 @@ export const AddFaq = async (data) => {
 };
 
 export const EditFaq = async (data) => {
+  if (USE_SUPABASE.admin) return sbCommon.EditFaq(data);
   try {
     const respData = await axios({
       url: `/admin/updateFaq`,
