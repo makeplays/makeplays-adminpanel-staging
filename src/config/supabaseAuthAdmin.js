@@ -16,15 +16,19 @@ export const login = async (data, dispatch) => {
     });
     if (error) return { status: false, message: error.message };
 
-    // Only super-admins may use the admin panel.
+    // Only super-admins (and active sub-admins) may use the admin panel.
     const { data: profile } = await supabase
       .from("profiles")
-      .select("id, first_name, last_name, is_super_admin")
+      .select("id, first_name, last_name, is_super_admin, admin_role, access_level, restrictions, activate")
       .eq("id", auth.user.id)
       .single();
     if (!profile?.is_super_admin) {
       await supabase.auth.signOut();
       return { status: false, message: "Not authorized for the admin panel." };
+    }
+    if (profile.admin_role === "subadmin" && profile.activate === false) {
+      await supabase.auth.signOut();
+      return { status: false, message: "Your account has been deactivated." };
     }
 
     const token = auth.session?.access_token;
@@ -32,16 +36,18 @@ export const login = async (data, dispatch) => {
     localStorage.setItem("refreshtoken", auth.session?.refresh_token ?? "");
     // NOTE: the sidebar/ConditionRoute gate on role==='superadmin' or
     // accessLevel==='Admin', and treat a FALSY `restrictions` as "no limits".
-    // An empty array is truthy, so we leave restrictions undefined.
+    // An empty array is truthy — superadmins keep restrictions undefined;
+    // sub-admins get their real accessLevel + restrictions (Wave 9.1).
+    const isSub = profile.admin_role === "subadmin";
     dispatch({
       type: SET_AUTHENTICATION,
       authData: {
         isAuth: true,
         isLoading: false,
         userId: profile.id,
-        restrictions: undefined,
-        accessLevel: "Admin",
-        role: "superadmin",
+        restrictions: isSub ? (profile.restrictions ?? []) : undefined,
+        accessLevel: isSub ? (profile.access_level || "View Only") : "Admin",
+        role: isSub ? "subadmin" : "superadmin",
         name: `${profile.first_name} ${profile.last_name}`.trim(),
         email: auth.user.email,
       },

@@ -9,6 +9,7 @@ import { USE_SUPABASE } from "../config/featureFlags";
 import * as sbAdmin from "../config/supabaseAuthAdmin";
 import * as sbEvent from "../config/supabaseEventAdmin";
 import * as sbCommon from "../config/supabaseAdminCommon";
+import * as sbAdminUsers from "../config/supabaseAdminUsers";
 var secretKey = crypto.cryptoSecretKey;
 
 export const login = async (data, dispatch) => {
@@ -490,6 +491,7 @@ export const DeletePlaylist = async (data) => {
 };
 
 export const CreateSubAdmin = async (data) => {
+  if (USE_SUPABASE.admin) return sbAdminUsers.CreateSubAdmin(data);
   try {
     const encryptedData = Customencryptdata(data, secretKey);
     const respData = await axios({
@@ -517,6 +519,7 @@ export const CreateSubAdmin = async (data) => {
 };
 
 export const listSubAdmin = async (reqData) => {
+  if (USE_SUPABASE.admin) return sbAdminUsers.listSubAdmin(reqData);
   try {
     const respData = await axios({
       url: `/admin/FetchSubAdminUsers`,
@@ -545,6 +548,7 @@ export const listSubAdmin = async (reqData) => {
 };
 
 export const EditSubAdminData = async (data) => {
+  if (USE_SUPABASE.admin) return sbAdminUsers.EditSubAdminData(data);
   try {
     const encryptedData = Customencryptdata(data, secretKey);
     const respData = await axios({
@@ -572,6 +576,7 @@ export const EditSubAdminData = async (data) => {
 };
 
 export const ActivateSubadmin = async (data) => {
+  if (USE_SUPABASE.admin) return sbAdminUsers.ActivateSubadmin(data);
   try {
     const encryptedData = Customencryptdata(data, secretKey);
     const respData = await axios({
