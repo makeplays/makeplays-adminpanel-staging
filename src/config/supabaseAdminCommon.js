@@ -3,8 +3,10 @@
 // return shapes ({status, message, result, count}) so the screens don't change.
 // Writes are gated by the super_admin RLS policies from 20260703000007.
 import { supabase } from "./supabase";
-import { secretKey } from "./index";
+import crypto from "./crypto";
 import { Customdecryptdata } from "../lib/CustomData";
+
+const secretKey = crypto.cryptoSecretKey;
 
 // FormData w/ encrypted `token` part (+ optional image/video files) → fields+files
 function parsePayload(data) {
