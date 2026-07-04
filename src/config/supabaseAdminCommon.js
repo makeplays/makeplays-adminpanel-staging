@@ -171,6 +171,25 @@ export const EditTemplate = async (data) => {
   return { status: true, message: "Email template updated successfully" };
 };
 
+// ─── Contact-us reply (SEND_REPLAY_FOR_CONTACT_MAIL via send-email) ──
+export const ReplyContactUs = async (data) => {
+  const id = data?._id ?? data?.id;
+  if (!id) return { status: false, message: "Contact request not found!" };
+  const { data: row, error } = await supabase
+    .from("contact_us").select("name, email").eq("id", id).maybeSingle();
+  if (error || !row) return fail(error || { message: "Contact request not found!" });
+  const { data: res, error: fnErr } = await supabase.functions.invoke("send-email", {
+    body: {
+      identifier: "SEND_REPLAY_FOR_CONTACT_MAIL",
+      toEmail: row.email,
+      content: { name: row.name, replayContent: data?.content ?? "" },
+    },
+  });
+  if (fnErr) return fail(fnErr);
+  if (res?.sent === false) return { status: false, message: res?.error ?? "Email not sent" };
+  return { status: true, message: "Reply sent successfully" };
+};
+
 // ─── Dashboard counts ────────────────────────────────────────────
 export const listCounts = async () => {
   const [users, teams] = await Promise.all([

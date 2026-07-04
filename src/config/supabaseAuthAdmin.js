@@ -91,7 +91,17 @@ export const getContactUs = async (reqData = {}) => {
   q = q.range((page - 1) * limit, page * limit - 1);
   const { data, count, error } = await q;
   if (error) return { status: false, message: error.message };
-  return { status: true, message: "Listed successfully", count: count ?? 0, result: data };
+  // legacy Mongo field names — the ContactUs list + Reply pages read _id/createdAt
+  const result = (data ?? []).map((r) => ({
+    _id: r.id,
+    userId: r.user_id,
+    name: r.name,
+    email: r.email,
+    message: r.message,
+    reason: r.reason,
+    createdAt: r.created_at,
+  }));
+  return { status: true, message: "Listed successfully", count: count ?? 0, result };
 };
 
 // Admin Users list — joins profiles + auth.users email via SECURITY DEFINER RPC.

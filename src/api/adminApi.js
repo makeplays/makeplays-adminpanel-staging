@@ -919,6 +919,7 @@ export const ResendBroadCastNotify = async (data) => {
 };
 
 export const ReplyContactUs = async (data) => {
+  if (USE_SUPABASE.admin) return sbCommon.ReplyContactUs(data);
   try {
     const encryptedData = Customencryptdata(data, secretKey);
     const respData = await axios({
