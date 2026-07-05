@@ -190,6 +190,48 @@ export const ReplyContactUs = async (data) => {
   return { status: true, message: "Reply sent successfully" };
 };
 
+// ─── Voice curation (Wave 10 audit fix — was 100% legacy, disconnected
+// from what the app actually reads: voices.preference / voices.image) ──
+export const UpdateSelectedVoices = async (data) => {
+  const ids = data?.selectedVoiceIds ?? [];
+  // full-replace semantics: the multi-select IS the new preferred set
+  const [{ error: onErr }, { error: offErr }] = await Promise.all([
+    ids.length
+      ? supabase.from("voices").update({ preference: true }).in("id", ids)
+      : Promise.resolve({ error: null }),
+    ids.length
+      ? supabase.from("voices").update({ preference: false }).not("id", "in", `(${ids.join(",")})`)
+      : supabase.from("voices").update({ preference: false }).neq("id", "00000000-0000-0000-0000-000000000000"),
+  ]);
+  if (onErr || offErr) return fail(onErr || offErr);
+  return { status: true, message: "Preferred voices updated successfully" };
+};
+
+export const UploadImage = async (data) => {
+  const { fields, image } = parsePayload(data);
+  const id = fields._id || fields.id;
+  if (!id) return { status: false, message: "Voice not found!" };
+  if (!image) return { status: false, message: "No image provided" };
+  const path = `${id}-${Date.now()}-${image.name}`;
+  const { error: upErr } = await supabase.storage.from("voice-images").upload(path, image, {
+    contentType: image.type || "application/octet-stream", upsert: true,
+  });
+  if (upErr) return fail(upErr);
+  const url = supabase.storage.from("voice-images").getPublicUrl(path).data.publicUrl;
+  const { error } = await supabase.from("voices").update({ image: url, updated_at: new Date().toISOString() }).eq("id", id);
+  if (error) return fail(error);
+  return { status: true, message: "Voice image updated successfully" };
+};
+
+// Sync Voices — refresh the catalog from ElevenLabs via the sync-voices edge
+// fn (needs the ELEVENLABS_API_KEY secret; runs server-side, admin-only).
+export const syncVoices = async () => {
+  const { data, error } = await supabase.functions.invoke("sync-voices", { body: {} });
+  if (error) return fail(error);
+  if (data?.status === false) return { status: false, message: data?.message };
+  return { status: true, message: data?.message ?? "Voices synced successfully" };
+};
+
 // ─── Dashboard counts ────────────────────────────────────────────
 export const listCounts = async () => {
   const [users, teams] = await Promise.all([

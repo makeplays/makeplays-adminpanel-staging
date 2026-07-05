@@ -326,7 +326,14 @@ export const EditProfiles = async (data) => {
 };
 
 export const listAllVoices = async (reqData) => {
-  if (USE_SUPABASE.voice && !reqData?.sync) return sbEvent.listAllVoices(reqData);
+  if (USE_SUPABASE.voice) {
+    if (reqData?.sync) {
+      const syncResult = await sbCommon.syncVoices();
+      if (!syncResult.status) return syncResult;
+    }
+    const { sync, ...restParams } = reqData || {};
+    return sbEvent.listAllVoices(restParams);
+  }
   try {
     if (reqData?.sync) {
       await axios({ url: `/user/getVoiceListAndSave`, method: "get" });
@@ -672,6 +679,7 @@ export const deleteAnnouncementTemplate = async (data) => {
 };
 
 export const UpdateSelectedVoices = async (data) => {
+  if (USE_SUPABASE.voice) return sbCommon.UpdateSelectedVoices(data);
   try {
     const encryptedData = Customencryptdata(data, secretKey);
     const respData = await axios({
@@ -1063,6 +1071,7 @@ export const EditFaq = async (data) => {
 };
 
 export const UploadImage = async (data) => {
+  if (USE_SUPABASE.voice) return sbCommon.UploadImage(data);
   try {
     const respData = await axios({
       url: `/admin/updateAiImage`,
