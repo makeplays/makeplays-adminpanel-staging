@@ -113,14 +113,6 @@ export const navLinks = [
         image: require("../assets/images/subadmin.svg").default,
     },
     {
-        path: "/playlist",
-        name: "Playlist",
-        exact: true,
-        sidemenu: true,
-        type: "private",
-        image: require("../assets/images/playlistIcon.svg").default,
-    },
-    {
         path: "/Voice",
         name: "Voice",
         exact: true,

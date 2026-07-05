@@ -38,8 +38,6 @@ import { AddEventsPage } from "./Screens/EventsPage/AddEventsPage";
 import ProfilePage from "./Screens/ProfilePage";
 import VoicePage from "./Screens/VoicesPage/VoicesPage";
 import LanguagePage from "./Screens/LanguagePage/LanguagePage";
-import { EditPlaylistPage } from "./Screens/PlaylistPage/EditPlaylistPage";
-import PlaylistPage from "./Screens/PlaylistPage/PlaylistPage";
 import AttendancePage from "./Screens/AttendancePage/AttendancePage";
 import UsersAndAccessPage from "./Screens/UsersAndAccessPage/UsersAndAccessPage";
 import { AddUsersPage } from "./Screens/UsersAndAccessPage/AddUsersPage";
@@ -95,8 +93,6 @@ function App() {
     { path: "/sports/add", component: AddSportPage, type: "private" },
     { path: "/attendance", component: AttendancePage, type: "private" },
     { path: "/profile", component: ProfilePage, type: "private" },
-    { path: "/playlist", component: PlaylistPage, type: "private" },
-    { path: "/playlist/edit", component: EditPlaylistPage, type: "private" },
     { path: "/voice", component: VoicePage, type: "private" },
     { path: "/language", component: LanguagePage, type: "private" },
     {
