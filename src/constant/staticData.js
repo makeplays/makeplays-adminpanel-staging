@@ -168,14 +168,6 @@ export const navLinks = [
         type: "private",
         image: require("../assets/images/Email_template.svg").default,
     },
-    // {
-    //     path: "/voice-template",
-    //     name: "Voice Template",
-    //     exact: true,
-    //     sidemenu: true,
-    //     type: "private",
-    //     image: require("../assets/images/voiceTemplateIcon.svg").default,
-    // },
     {
         path: "/admin-and-access",
         name: "Admin and Access",

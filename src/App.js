@@ -43,9 +43,6 @@ import UsersAndAccessPage from "./Screens/UsersAndAccessPage/UsersAndAccessPage"
 import { AddUsersPage } from "./Screens/UsersAndAccessPage/AddUsersPage";
 import { EditUsersPage } from "./Screens/UsersAndAccessPage/EditUsersPage";
 import { components } from "react-select";
-import VoiceTemplatePage from "./Screens/VoiceTemplatePage/VoiceTemplatePage.jsx";
-import { AddVoiceTemplatePage } from "./Screens/VoiceTemplatePage/AddVoiceTemplatePage.jsx";
-import { EditVoiceTemplatePage } from "./Screens/VoiceTemplatePage/EditVoiceTemplatePage.jsx";
 import { CreditsPage } from "./Screens/CreditsPage/CreditsPage.jsx";
 import ContactUsPage from "./Screens/ContactUsPage/ContactUsPage.jsx";
 import Dashboard from "./Screens/Dashboard/Dashboard.jsx";
@@ -104,17 +101,6 @@ function App() {
     {
       path: "/admin-and-access/edit",
       component: EditUsersPage,
-      type: "private",
-    },
-    { path: "/voice-template", component: VoiceTemplatePage, type: "private" },
-    {
-      path: "/voice-template/add",
-      component: AddVoiceTemplatePage,
-      type: "private",
-    },
-    {
-      path: "/voice-template/edit",
-      component: EditVoiceTemplatePage,
       type: "private",
     },
     { path: "/credits", component: CreditsPage, type: "private" },
