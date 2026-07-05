@@ -39,6 +39,7 @@ export const listAllEvent = async (reqData) => {
 }
 
 export const EditEvent = async (data) => {
+    if (USE_SUPABASE.event) return sbEvent.EditEvent(data);
     try {
         const encryptedData = Customencryptdata(data, secretKey)
         const respData = await axios({
@@ -66,6 +67,7 @@ export const EditEvent = async (data) => {
 }
 
 export const getOpponetTeams = async (data) => {
+    if (USE_SUPABASE.event) return sbEvent.getOpponetTeams(data);
     try {
         const encryptedData = Customencryptdata(data, secretKey)
         const respData = await axios({

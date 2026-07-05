@@ -15,7 +15,9 @@ const eventAdminRow = (e) => ({
   maxPlayers: e.max_players,
   notes: e.notes,
   uniform: e.uniform,
-  teamId: e.team ? { teamName: e.team.name, name: e.team.name } : null,
+  // _id added (Wave 10 audit fix) — EditEventsPage needs teamId._id to look up
+  // opponent teams; previously undefined so that lookup silently did nothing.
+  teamId: e.team_id ? { _id: e.team_id, teamName: e.team?.name, name: e.team?.name } : null,
   opponent: e.opponentTeam
     ? { teamName: e.opponentTeam.name, name: e.opponentTeam.name }
     : e.opponent
@@ -50,6 +52,49 @@ export const DeleteEvent = async (data) => {
   const { error } = await supabase.from('events').delete().eq('id', id);
   if (error) return { status: false, message: error.message };
   return { status: true, message: 'Event deleted successfully.' };
+};
+
+// EditEvent (Wave 10 audit fix — was 100% legacy despite event=true).
+// Field map mirrors the backend's updateEvents; `title` is deliberately left
+// untouched (EditEventsPage's form has no title field, same as legacy, where
+// Reqdata.title was always undefined and a no-op under Mongoose $set).
+export const EditEvent = async (data) => {
+  const id = data?._id || data?.eventId || data?.id;
+  if (!id) return { status: false, message: 'Event does not exists!' };
+  const update = { updated_at: new Date().toISOString() };
+  const map = {
+    eventType: 'event_type', maxPlayers: 'max_players', date: 'starts_at',
+    duration: 'duration', location: 'location', homeOrAway: 'home_or_away',
+    time: 'event_time', arrive: 'arrive', uniform: 'uniform', notes: 'notes',
+    notifyTeam: 'notify_team',
+  };
+  for (const [src, col] of Object.entries(map)) if (data?.[src] !== undefined) update[col] = data[src];
+  if (data?.opponent !== undefined) {
+    // admin's opponent Select always picks a registered TEAM (getOpponetTeams
+    // below only lists teams), so it always resolves to opponent_team_id.
+    update.opponent_team_id = data.opponent || null;
+    update.opponent_id = null;
+  }
+  const { error } = await supabase.from('events').update(update).eq('id', id);
+  if (error) return { status: false, message: error.message };
+  return { status: true, message: 'Event updated successfully.' };
+};
+
+// getOpponetTeams (Wave 10 audit fix): other teams with the SAME sport,
+// excluding the current team — mirrors the backend's teamSchema.find({sportId, _id:{$ne}}).
+export const getOpponetTeams = async (data) => {
+  const teamId = data?.teamId;
+  if (!teamId) return { status: false, message: 'Team does not exists!' };
+  const { data: team } = await supabase.from('teams').select('id, sport_id').eq('id', teamId).maybeSingle();
+  if (!team) return { status: false, message: 'Team does not exists!' };
+  let q = supabase.from('teams').select('id, name').neq('id', teamId);
+  q = team.sport_id ? q.eq('sport_id', team.sport_id) : q.is('sport_id', null);
+  const { data: teams, error } = await q;
+  if (error) return { status: false, message: error.message };
+  return {
+    status: true, message: 'Listed successfully',
+    result: (teams ?? []).map((t) => ({ _id: t.id, teamName: t.name, name: t.name })),
+  };
 };
 
 export const listAllVoices = async (reqData = {}) => {
