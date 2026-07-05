@@ -17,6 +17,7 @@ import { AiFillAudio } from "react-icons/ai";
 import { listAllMember, DeleteMember, getAllTeams } from '../../api/memberApi'
 import { listAllTeams } from '../../api/teamApi'
 import key from "../../config/index";
+import { assetUrl } from "../../lib/assetUrl";
 import { CustomToastHandler } from "../../hooks/useCustomToast";
 import { useSelector } from "react-redux";
 
@@ -164,7 +165,7 @@ const MembersPage = () => {
           return (
             <div className="tableImgViewCard">
               <img
-                src={`${key.IMAGE_URL}/Member/${record.memberImage}`}
+                src={assetUrl(record.memberImage, `${key.IMAGE_URL}/Member/`)}
                 alt="Member"
               />
             </div>

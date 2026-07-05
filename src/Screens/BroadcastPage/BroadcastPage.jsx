@@ -10,6 +10,7 @@ import { SportPageModels } from "../../Modals/SportPageModels";
 import { IoIosAdd } from "react-icons/io";
 import { listAllBroadCast, DeleteBroadCastNotify, ResendBroadCastNotify } from '../../api/adminApi'
 import key from "../../config/index";
+import { assetUrl } from "../../lib/assetUrl";
 import { CustomToastHandler } from "../../hooks/useCustomToast";
 import { useSelector } from "react-redux";
 
@@ -61,7 +62,7 @@ const BroadcastPage = () => {
           return (
             <div className="tableImgViewCard">
               {record.image ? <img
-                src={`${key.IMAGE_URL}/Broadcast/${record.image}`}
+                src={assetUrl(record.image, `${key.IMAGE_URL}/Broadcast/`)}
               /> : <p>No Image</p>}{" "}
             </div>
           );

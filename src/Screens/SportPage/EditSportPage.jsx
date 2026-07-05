@@ -7,6 +7,7 @@ import { DashboardLayout } from "../../Layouts/dashboardLayout";
 import { useLocation } from 'react-router-dom';
 import key from "../../config/index";
 import fileObjectUrl from "../../lib/fileObjectUrl";
+import { assetUrl } from "../../lib/assetUrl";
 import crypto from '../../config/crypto';
 import { EditSports } from '../../api/sportApi'
 import { Customdecryptdata, Customencryptdata } from '../../lib/CustomData';
@@ -29,9 +30,7 @@ export const EditSportPage = ({ record }) => {
 
     useEffect(() => {
         if (sportsData) {
-            const imageUrl = sportsData.image
-                ? `${key.IMAGE_URL}/Sports/${sportsData.image}`
-                : '';
+            const imageUrl = assetUrl(sportsData.image, `${key.IMAGE_URL}/Sports/`);
 
             setFormvalue({
                 ...sportsData,

@@ -164,6 +164,9 @@ export const DeleteTeam = async (data) => {
 };
 
 // ─── Members (admin) ─────────────────────────────────────────────────────────
+// member_image/ai_voice are storage PATHS (member-photos / voice-audio buckets,
+// both currently public buckets — see storage.buckets.public — so a plain
+// getPublicUrl resolves them; Wave 10 audit fix, these were dropped entirely).
 const memberRow = (m) =>
   m && {
     _id: m.id, teamId: m.team_id, teamName: m.teams?.name ?? "",
@@ -172,6 +175,8 @@ const memberRow = (m) =>
     isMinor: m.is_minor, guardianName: m.guardian_name, guardianEmail: m.guardian_email,
     relationship: m.relationship, address: m.address, city: m.city, country: m.country,
     province: m.province, postalcode: m.postalcode, colorCode: m.color_code, type: m.type,
+    memberImage: m.member_image ? supabase.storage.from("member-photos").getPublicUrl(m.member_image).data.publicUrl : "",
+    aiVoice: m.ai_voice ? supabase.storage.from("voice-audio").getPublicUrl(m.ai_voice).data.publicUrl : "",
     createdAt: m.created_at, updatedAt: m.updated_at,
   };
 

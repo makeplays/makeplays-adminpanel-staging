@@ -8,6 +8,7 @@ import { DashboardLayout } from "../../Layouts/dashboardLayout";
 import key from "../../config/index";
 import { Editmember } from '../../api/memberApi'
 import fileObjectUrl from "../../lib/fileObjectUrl";
+import { assetUrl } from "../../lib/assetUrl";
 import { Customdecryptdata, Customencryptdata } from '../../lib/CustomData';
 import { CustomToastHandler } from "../../hooks/useCustomToast";
 import crypto from '../../config/crypto';
@@ -37,13 +38,8 @@ export const EditMembersPage = ({ show, handleClose, record }) => {
 
     useEffect(() => {
         if (memberData) {
-            const imageUrl = memberData.memberImage
-                ? `${key.IMAGE_URL}/Member/${memberData.memberImage}`
-                : '';
-
-            const aiVoiceUrl = memberData.aiVoice
-                ? `${key.IMAGE_URL}/MemberAudio/${memberData.aiVoice}`
-                : '';
+            const imageUrl = assetUrl(memberData.memberImage, `${key.IMAGE_URL}/Member/`);
+            const aiVoiceUrl = assetUrl(memberData.aiVoice, `${key.IMAGE_URL}/MemberAudio/`);
 
             setFormvalue({
                 ...memberData,

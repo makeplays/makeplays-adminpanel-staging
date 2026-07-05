@@ -7,6 +7,7 @@ import { DashboardLayout } from "../../Layouts/dashboardLayout";
 import { useLocation } from 'react-router-dom';
 import key from "../../config/index";
 import fileObjectUrl from "../../lib/fileObjectUrl";
+import { assetUrl } from "../../lib/assetUrl";
 import crypto from '../../config/crypto';
 import { EditFaq } from '../../api/adminApi'
 import { Customdecryptdata, Customencryptdata } from '../../lib/CustomData';
@@ -29,13 +30,8 @@ export const EditFaqPage = ({ record }) => {
 
     useEffect(() => {
         if (faqData) {
-            const imageUrl = faqData.image
-                ? `${key.IMAGE_URL}/Faq/${faqData.image}`
-                : '';
-
-            const videoUrl = faqData.video
-                ? `${key.IMAGE_URL}/Faq/${faqData.video}`
-                : '';
+            const imageUrl = assetUrl(faqData.image, `${key.IMAGE_URL}/Faq/`);
+            const videoUrl = assetUrl(faqData.video, `${key.IMAGE_URL}/Faq/`);
 
             setFormvalue({
                 ...faqData,

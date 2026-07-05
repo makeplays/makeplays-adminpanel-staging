@@ -12,6 +12,7 @@ import { SportPageModels } from "../../Modals/SportPageModels";
 import { IoIosAdd } from "react-icons/io";
 import { listAllFaq, DeleteFaq } from '../../api/adminApi'
 import key from "../../config/index";
+import { assetUrl } from "../../lib/assetUrl";
 import { CustomToastHandler } from "../../hooks/useCustomToast";
 import { useSelector } from "react-redux";
 import { FaqPageModels } from "../../Modals/FaqPageModels";
@@ -65,7 +66,7 @@ const FaqPage = () => {
           return (
             <div className="tableFaqImgViewCard">
               <img
-                src={`${key.IMAGE_URL}/Faq/${record.image}`}
+                src={assetUrl(record.image, `${key.IMAGE_URL}/Faq/`)}
               />{" "}
             </div>
           );
@@ -84,7 +85,7 @@ const FaqPage = () => {
         if (record?.video && record?.video !== "undefined") {
           return (
             <div className="tableVideoViewCard">
-              <video src={`${key.IMAGE_URL}/Faq/${record.video}`} controls></video>
+              <video src={assetUrl(record.video, `${key.IMAGE_URL}/Faq/`)} controls></video>
               {" "}
             </div>
           );

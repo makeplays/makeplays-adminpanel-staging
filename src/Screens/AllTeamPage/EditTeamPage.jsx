@@ -7,6 +7,7 @@ import { useHistory } from "react-router-dom/cjs/react-router-dom.min";
 import { DashboardLayout } from "../../Layouts/dashboardLayout";
 import key from "../../config/index";
 import fileObjectUrl from "../../lib/fileObjectUrl";
+import { assetUrl } from "../../lib/assetUrl";
 import crypto from '../../config/crypto';
 import { EditTeams, getSports } from '../../api/teamApi'
 import { Customdecryptdata, Customencryptdata } from '../../lib/CustomData';
@@ -33,9 +34,7 @@ export const EditTeamPage = ({ handleClose, record }) => {
 
     useEffect(() => {
         if (teamData) {
-            const imageUrl = teamData.teamLogo
-                ? `${key.IMAGE_URL}/Team/${teamData.teamLogo}`
-                : '';
+            const imageUrl = assetUrl(teamData.teamLogo, `${key.IMAGE_URL}/Team/`);
 
             setFormValue({
                 ...teamData,
