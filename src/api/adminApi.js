@@ -152,6 +152,7 @@ export const EditTemplate = async (data, dispatch) => {
 };
 
 export const sendForgotMail = async (data) => {
+  if (USE_SUPABASE.auth) return sbAdmin.sendForgotMail(data);
   try {
     const encryptedData = Customencryptdata(data, secretKey);
     const respData = await axios({
@@ -181,6 +182,7 @@ export const sendForgotMail = async (data) => {
 };
 
 export const ForgotPasswords = async (data) => {
+  if (USE_SUPABASE.auth) return sbAdmin.ForgotPasswords(data);
   try {
     const encryptedData = Customencryptdata(data, secretKey);
     let respData = await axios({
@@ -210,6 +212,7 @@ export const ForgotPasswords = async (data) => {
 };
 
 export const sendMail = async (data) => {
+  if (USE_SUPABASE.auth) return sbAdmin.sendMail(data);
   try {
     const encryptedData = Customencryptdata(data, secretKey);
     const respData = await axios({
@@ -238,6 +241,7 @@ export const sendMail = async (data) => {
 };
 
 export const resetPassword = async (data) => {
+  if (USE_SUPABASE.auth) return sbAdmin.resetPassword(data);
   try {
     const encryptedData = Customencryptdata(data, secretKey);
     let respData = await axios({
@@ -293,6 +297,7 @@ export const getProfile = async () => {
 };
 
 export const EditProfiles = async (data) => {
+  if (USE_SUPABASE.auth) return sbAdmin.EditProfiles(data);
   try {
     const encryptedData = Customencryptdata(data, secretKey);
     const respData = await axios({

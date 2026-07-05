@@ -80,7 +80,73 @@ export const getProfile = async () => {
     .eq("id", u.user.id)
     .single();
   if (error) return { status: false, message: error.message };
-  return { status: true, message: "Profile fetched", result: { ...profile, email: u.user.email } };
+  // ProfilePage reads a single `name` field (legacy Admin.name) — derive it
+  // from first_name/last_name so it isn't blank (Wave 10 audit fix).
+  const name = `${profile.first_name ?? ""} ${profile.last_name ?? ""}`.trim();
+  return { status: true, message: "Profile fetched", result: { ...profile, name, email: u.user.email } };
+};
+
+// EditProfiles({name, email}) -> { status, message }
+// Splits the single `name` field back into first_name/last_name; updates the
+// auth email too if it changed (requires the user to confirm via email link,
+// same as Supabase Auth's standard email-change flow).
+export const EditProfiles = async (data) => {
+  const { data: u } = await supabase.auth.getUser();
+  if (!u?.user) return { status: false, message: "Not authenticated" };
+  const parts = String(data?.name ?? "").trim().split(/\s+/);
+  const first_name = parts[0] ?? "";
+  const last_name = parts.slice(1).join(" ");
+  const { error } = await supabase
+    .from("profiles").update({ first_name, last_name }).eq("id", u.user.id);
+  if (error) return { status: false, message: error.message };
+  if (data?.email && data.email !== u.user.email) {
+    const { error: eErr } = await supabase.auth.updateUser({ email: data.email });
+    if (eErr) return { status: false, message: eErr.message };
+    return { status: true, message: "Profile updated. Confirm the new email via the link we sent it." };
+  }
+  return { status: true, message: "Profile updated successfully" };
+};
+
+// ─── forgot password (logged-out — OTP to email, then set new password) ────
+export const sendForgotMail = async (data) => {
+  const { error } = await supabase.auth.resetPasswordForEmail(data?.email);
+  if (error) return { status: false, message: error.message };
+  return { status: true, message: "We've sent an OTP to your email. Kindly check and verify." };
+};
+
+export const ForgotPasswords = async (data) => {
+  const { error: vErr } = await supabase.auth.verifyOtp({
+    email: data?.email, token: String(data?.otp ?? ""), type: "recovery",
+  });
+  if (vErr) return { status: false, message: "Invalid or expired OTP" };
+  const { error: uErr } = await supabase.auth.updateUser({ password: data?.newPassword });
+  if (uErr) return { status: false, message: uErr.message };
+  await supabase.auth.signOut();
+  return { status: true, message: "Password reset successfully. Please log in." };
+};
+
+// ─── reset password (logged-in — OTP to own email as a step-up, then change) ─
+export const sendMail = async (data) => {
+  const email = data?.email || (await supabase.auth.getUser()).data?.user?.email;
+  if (!email) return { status: false, message: "Not authenticated" };
+  const { error } = await supabase.auth.resetPasswordForEmail(email);
+  if (error) return { status: false, message: error.message };
+  return { status: true, message: "We've sent an OTP to your email." };
+};
+
+export const resetPassword = async (data) => {
+  // Step-up verification: the OTP just emailed re-authenticates the session
+  // (same recovery-token mechanism as the logged-out flow) before the change
+  // is allowed, mirroring the legacy old-password + OTP double-check.
+  if (data?.otp) {
+    const { error: vErr } = await supabase.auth.verifyOtp({
+      email: data?.email, token: String(data.otp), type: "recovery",
+    });
+    if (vErr) return { status: false, message: "Invalid or expired OTP" };
+  }
+  const { error } = await supabase.auth.updateUser({ password: data?.newPassword });
+  if (error) return { status: false, message: error.message };
+  return { status: true, message: "Password updated successfully" };
 };
 
 // getContactUs(reqData) -> { status, count, result }
