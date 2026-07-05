@@ -365,33 +365,6 @@ export const listAllVoices = async (reqData) => {
   }
 };
 
-export const GetSelectedVoices = async () => {
-  try {
-    const respData = await axios({
-      url: `/admin/getSelectedVoices`,
-      method: "get",
-    });
-    const decryptedData = Customdecryptdata(respData?.data, secretKey);
-    return {
-      status: decryptedData.status,
-      message: decryptedData.message,
-      result: decryptedData.data,
-      count: decryptedData?.count,
-    };
-  } catch (err) {
-    console.log("GetSelectedVoices__err", err);
-    if (err?.status === 401) {
-      logoutUser();
-      return;
-    }
-    const decryptedData = Customdecryptdata(err?.response?.data, secretKey);
-    return {
-      status: false,
-      message: decryptedData.message,
-    };
-  }
-};
-
 export const listAllLanguages = async (reqData) => {
   if (USE_SUPABASE.voice) return sbEvent.listAllLanguages(reqData);
   try {
