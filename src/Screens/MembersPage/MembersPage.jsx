@@ -265,12 +265,11 @@ const MembersPage = () => {
         setMemberList(result);
         setCount(count)
       } else {
-        if (error) {
-        } else if (message) {
-        }
+        CustomToastHandler({ msg: error || message || "Could not load members.", type: "error" })
       }
     } catch (err) {
       console.log("getAllMember__err", err);
+      CustomToastHandler({ msg: "An error occurred while loading members.", type: "error" })
     }
   };
 
