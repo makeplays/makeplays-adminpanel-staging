@@ -116,7 +116,7 @@ const SportPage = () => {
         </button>
         <button
           onClick={() => onactivate(record._id)}
-          title={!record.activate ? "Click to deactivate" : "Click to activate"}
+          title={record.activate ? "Click to deactivate" : "Click to activate"}
           style={{
             background: 'none',
             border: 'none',
@@ -132,19 +132,19 @@ const SportPage = () => {
             borderRadius: 20,
             fontSize: 12,
             fontWeight: 600,
-            backgroundColor: !record.activate ? 'rgba(76,175,80,0.12)' : 'rgba(158,158,158,0.12)',
-            color: !record.activate ? '#4CAF50' : '#9E9E9E',
-            border: `1px solid ${!record.activate ? '#4CAF50' : '#9E9E9E'}`,
+            backgroundColor: record.activate ? 'rgba(76,175,80,0.12)' : 'rgba(158,158,158,0.12)',
+            color: record.activate ? '#4CAF50' : '#9E9E9E',
+            border: `1px solid ${record.activate ? '#4CAF50' : '#9E9E9E'}`,
             whiteSpace: 'nowrap',
           }}>
             <span style={{
               width: 7,
               height: 7,
               borderRadius: '50%',
-              backgroundColor: !record.activate ? '#4CAF50' : '#9E9E9E',
+              backgroundColor: record.activate ? '#4CAF50' : '#9E9E9E',
               flexShrink: 0,
             }} />
-            {!record.activate ? 'Active' : 'Inactive'}
+            {record.activate ? 'Active' : 'Inactive'}
           </span>
         </button>
       </div>
