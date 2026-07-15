@@ -183,7 +183,10 @@ const memberRow = (m) =>
 export const listAllMember = async (reqData = {}) => {
   const page = Number(reqData.page) || 1;
   const limit = Number(reqData.limit) || 10;
-  let q = supabase.from("members").select("*, teams(name)", { count: "exact" })
+  // Explicit FK hint: members also relates to teams via teams.dj_id, so the
+  // unqualified `teams(name)` embed is ambiguous (PGRST201) — this is always
+  // "the team this member is on" (members.team_id), not "teams this member DJs".
+  let q = supabase.from("members").select("*, teams!members_team_id_fkey(name)", { count: "exact" })
     .eq("type", "player").order("created_at", { ascending: false });
   if (reqData.teamId) q = q.eq("team_id", reqData.teamId);
   const search = reqData.search || reqData.firstname;
