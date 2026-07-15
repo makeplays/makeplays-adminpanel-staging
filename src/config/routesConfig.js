@@ -12,7 +12,6 @@ const nav = {
         // "/playlist/edit"
     ],
     "/voice": [],
-    "/language": [],
     "/events": [
         // "/events/edit"
     ],

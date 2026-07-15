@@ -121,14 +121,6 @@ export const navLinks = [
         image: require("../assets/images/voiceIcon.svg").default,
     },
     {
-        path: "/language",
-        name: "Language",
-        exact: true,
-        sidemenu: true,
-        type: "private",
-        image: require("../assets/images/languageIcon.svg").default,
-    },
-    {
         path: "/events",
         name: "Events",
         exact: true,

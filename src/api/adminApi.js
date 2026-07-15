@@ -365,35 +365,6 @@ export const listAllVoices = async (reqData) => {
   }
 };
 
-export const listAllLanguages = async (reqData) => {
-  if (USE_SUPABASE.voice) return sbEvent.listAllLanguages(reqData);
-  try {
-    const respData = await axios({
-      url: `/admin/getLanguage`,
-      method: "get",
-      params: reqData,
-    });
-    const decryptedData = Customdecryptdata(respData?.data, secretKey);
-    return {
-      status: decryptedData.status,
-      message: decryptedData.message,
-      result: decryptedData.data,
-      count: decryptedData?.count,
-    };
-  } catch (err) {
-    console.log("listAllLanguages__err", err);
-    if (err?.status === 401) {
-      logoutUser();
-      return;
-    }
-    const decryptedData = Customdecryptdata(err?.response?.data, secretKey);
-    return {
-      status: false,
-      message: decryptedData.message,
-    };
-  }
-};
-
 export const CreateSubAdmin = async (data) => {
   if (USE_SUPABASE.admin) return sbAdminUsers.CreateSubAdmin(data);
   try {

@@ -37,7 +37,6 @@ import { AddSportPage } from "./Screens/SportPage/AddSportPage";
 import { AddEventsPage } from "./Screens/EventsPage/AddEventsPage";
 import ProfilePage from "./Screens/ProfilePage";
 import VoicePage from "./Screens/VoicesPage/VoicesPage";
-import LanguagePage from "./Screens/LanguagePage/LanguagePage";
 import AttendancePage from "./Screens/AttendancePage/AttendancePage";
 import UsersAndAccessPage from "./Screens/UsersAndAccessPage/UsersAndAccessPage";
 import { AddUsersPage } from "./Screens/UsersAndAccessPage/AddUsersPage";
@@ -91,7 +90,6 @@ function App() {
     { path: "/attendance", component: AttendancePage, type: "private" },
     { path: "/profile", component: ProfilePage, type: "private" },
     { path: "/voice", component: VoicePage, type: "private" },
-    { path: "/language", component: LanguagePage, type: "private" },
     {
       path: "/admin-and-access",
       component: UsersAndAccessPage,
