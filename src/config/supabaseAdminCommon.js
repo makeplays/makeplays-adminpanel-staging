@@ -234,14 +234,18 @@ export const syncVoices = async () => {
 
 // ─── Dashboard counts ────────────────────────────────────────────
 export const listCounts = async () => {
+  // profiles RLS is self/org-scoped (no super_admin bypass) — a raw
+  // count(*) here only ever sees the admin's own row. Reuse the same
+  // SECURITY DEFINER RPC the Users page lists from (admin_list_users) so
+  // this tile always agrees with what that page actually shows.
   const [users, teams] = await Promise.all([
-    supabase.from("profiles").select("id", { count: "exact", head: true }),
+    supabase.rpc("admin_list_users", { p_page: 1, p_limit: 1, p_search: "" }),
     supabase.from("teams").select("id", { count: "exact", head: true }).eq("team_status", true),
   ]);
   if (users.error || teams.error) return fail(users.error || teams.error);
   return {
     status: true,
     message: "Dashboard data",
-    result: { UserCount: users.count ?? 0, TeamCount: teams.count ?? 0 },
+    result: { UserCount: users.data?.count ?? 0, TeamCount: teams.count ?? 0 },
   };
 };
