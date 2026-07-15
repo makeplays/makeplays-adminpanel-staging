@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Modal } from "react-bootstrap";
 import audioTag from "../assets/images/testAudio.mp3";
 import key from "../config/index";
+import { assetUrl } from "../lib/assetUrl";
 
 const DeleteModal = ({ show, handleClose, onConfirm }) => {
 
@@ -47,7 +48,7 @@ const DeleteModal = ({ show, handleClose, onConfirm }) => {
 
 const PreviewModal = ({ show, handleClose, record }) => {
   const audioSrc = record?.aiVoice
-    ? `${key.IMAGE_URL}/MemberAudio/${record.aiVoice}`
+    ? assetUrl(record.aiVoice, `${key.IMAGE_URL}/MemberAudio/`)
     : "";
 
   const getMimeType = (url) => {

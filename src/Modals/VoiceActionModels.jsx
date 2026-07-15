@@ -7,6 +7,7 @@ import { UploadImage } from '../api/adminApi'
 import { Customdecryptdata, Customencryptdata } from '../lib/CustomData';
 import crypto from '../config/crypto';
 import key from "../config/index";
+import { assetUrl } from "../lib/assetUrl";
 
 var secretKey = crypto.cryptoSecretKey
 
@@ -129,7 +130,7 @@ const VoiceActionModels = ({ show, handleClose, onConfirm, record, getAllVoices 
                                     <img src={fileObjectUrl(formValue?.image)} className='w-25 rounded-2' alt='' />
                                 ) : record?.image ? (
                                     <img
-                                        src={`${key.IMAGE_URL}/AiImage/${record?.image}`}
+                                        src={assetUrl(record?.image, `${key.IMAGE_URL}/AiImage/`)}
                                         className="w-25 rounded-2"
 
                                     />

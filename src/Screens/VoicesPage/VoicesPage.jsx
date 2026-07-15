@@ -8,6 +8,7 @@ import { FaLink, FaPlay } from "react-icons/fa";
 import { useHistory } from "react-router-dom";
 import { listAllVoices, UpdateSelectedVoices } from '../../api/adminApi'
 import key from "../../config/index";
+import { assetUrl } from "../../lib/assetUrl";
 import { CustomToastHandler } from "../../hooks/useCustomToast";
 import VoiceActionModels from "../../Modals/VoiceActionModels";
 import { isEmpty } from "../../lib/isEmpty";
@@ -168,7 +169,7 @@ const VoicePage = () => {
                             style={{ cursor: 'pointer' }}
                             onClick={() => { setSelectedRecord(record); setShowAction(true); }}
                         >
-                            <img src={`${key.IMAGE_URL}/AiImage/${record.image}`} alt="voice" />
+                            <img src={assetUrl(record.image, `${key.IMAGE_URL}/AiImage/`)} alt="voice" />
                         </div>
                     );
                 }

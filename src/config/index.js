@@ -1,5 +1,10 @@
 let key = {};
-let env = "local";
+// Driven by REACT_APP_MODE (set by the build_production/build_demo npm
+// scripts) instead of a hand-edited literal — this used to be manually
+// toggled between "local"/"demo" before every build and was never once
+// committed as "production", so a plain `npm run build` deploy still
+// pointed at http://localhost:2005.
+let env = process.env.REACT_APP_MODE || "local";
 if (env === "production") {
   //Set Production Config
 
