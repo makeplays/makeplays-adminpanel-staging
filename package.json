@@ -42,6 +42,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "DISABLE_ESLINT_PLUGIN=true react-scripts build",
+    "build_local": "REACT_APP_MODE=local GENERATE_SOURCEMAP=false DISABLE_ESLINT_PLUGIN=true react-scripts build",
     "build_demo": "REACT_APP_MODE=demo GENERATE_SOURCEMAP=false DISABLE_ESLINT_PLUGIN=true react-scripts build",
     "build_production": "REACT_APP_MODE=production GENERATE_SOURCEMAP=false react-scripts build",
     "test": "react-scripts test",
