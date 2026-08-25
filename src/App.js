@@ -16,7 +16,8 @@ import LoginPage from "./Screens/LoginPage";
 import ForgotPassword from "./Screens/ForgotPassword";
 import ResetNewPassword from "./Screens/ResetNewPassword";
 import OTPVerification from "./Screens/OTPVerification";
-import { getAuthToken } from "./lib/localStorage";
+import { getAuthToken, logoutUser } from "./lib/localStorage";
+import { isSessionExpired } from "./lib/session";
 import { SET_AUTHENTICATION } from "./constant";
 import { USE_SUPABASE } from "./config/featureFlags";
 
@@ -124,6 +125,13 @@ function App() {
 
   useEffect(() => {
     let token = getAuthToken();
+    // The browser may have been closed for longer than the 12h absolute
+    // session cap — nothing polls while it's closed, so check on boot too,
+    // before hydrating redux with a session that shouldn't be honored.
+    if (!isEmpty(token) && USE_SUPABASE.auth && isSessionExpired()) {
+      logoutUser();
+      return;
+    }
     if (!isEmpty(token)) {
       token = token.replace("Bearer ", "");
       const decoded = jwt_decode(token);

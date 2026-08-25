@@ -2,28 +2,24 @@ import React, { useState, } from "react";
 import { Col, Row, Dropdown, Offcanvas } from "react-bootstrap";
 import { NavLink } from "react-router-dom";
 import { useHistory } from "react-router-dom";
-import { removeAuthToken } from "../lib/localStorage";
+import { logoutUser } from "../lib/localStorage";
 import { Link } from "react-router-dom/cjs/react-router-dom";
 import { CgProfile } from "react-icons/cg";
 import { navLinks } from "../constant/staticData";
 import { useAlert } from "../hooks/useAlert";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 
 function Header({ title }) {
   const history = useHistory();
   let AuthData = useSelector((state) => state.isRun);
+  const dispatch = useDispatch();
 
   const { showAlert } = useAlert();
 
-  const onConfirmHandle = async () => {
-    try {
-      removeAuthToken();
-      localStorage.removeItem('token')
-      history.push("/");
-
-    } catch (err) {
-      console.log("onConfirmHandle__err", err);
-    }
+  const onConfirmHandle = () => {
+    // logoutUser handles revoking the Supabase session, clearing every auth
+    // key, and redirecting — same path every other logout trigger uses.
+    logoutUser(dispatch);
   };
 
   const [show, setShow] = useState(false);

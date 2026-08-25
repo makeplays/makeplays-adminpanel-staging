@@ -541,32 +541,13 @@ export const deleteAnnouncementTemplate = async (data) => {
   }
 };
 
-export const UpdateSelectedVoices = async (data) => {
-  if (USE_SUPABASE.voice) return sbCommon.UpdateSelectedVoices(data);
-  try {
-    const encryptedData = Customencryptdata(data, secretKey);
-    const respData = await axios({
-      url: `/admin/updateSelectedVoices`,
-      method: "post",
-      data: { token: encryptedData },
-    });
-    const decryptedData = Customdecryptdata(respData?.data, secretKey);
-    return {
-      status: decryptedData.status,
-      message: decryptedData.message,
-    };
-  } catch (err) {
-    console.log("UpdateSelectedVoices__err", err);
-    if (err?.status === 401) {
-      logoutUser();
-      return;
-    }
-    const decryptedData = Customdecryptdata(err?.response?.data, secretKey);
-    return {
-      status: false,
-      message: decryptedData.message,
-    };
-  }
+// changes: { [voiceUuid]: { preference?: boolean, tier?: 'free' | 'pro' } }
+// Supabase-only — the legacy Express backend never had an endpoint for this
+// shape (the old UpdateSelectedVoices route it replaces was itself broken;
+// see supabaseAdminCommon.js's UpdateVoiceCuration for why).
+export const UpdateVoiceCuration = async (changes) => {
+  if (USE_SUPABASE.voice) return sbCommon.UpdateVoiceCuration(changes);
+  return { status: false, message: "Voice curation requires the Supabase backend." };
 };
 
 export const getContactUsData = async (reqData) => {

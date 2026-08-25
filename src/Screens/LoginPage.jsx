@@ -10,6 +10,7 @@ import { CustomToastHandler } from "../hooks/useCustomToast";
 const initialFormValue = {
   email: "",
   password: "",
+  rememberMe: false,
 };
 
 const LoginPage = () => {
@@ -23,8 +24,8 @@ const LoginPage = () => {
 
   const handleChange = (e) => {
     setErrors({});
-    const { name, value } = e.target;
-    setFormValue((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFormValue((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
   };
 
   const validation = () => {
@@ -125,7 +126,16 @@ const LoginPage = () => {
                       </div>
                       <span className="text-danger">{errors.password}</span>
                     </div>
-                    <div className="mt-3 text-end">
+                    <div className="mt-3 d-flex justify-content-between align-items-center">
+                      <label className="d-flex align-items-center gap-2 mb-0">
+                        <input
+                          type="checkbox"
+                          name="rememberMe"
+                          checked={formValue?.rememberMe}
+                          onChange={handleChange}
+                        />
+                        <span>Keep me signed in</span>
+                      </label>
                       <Link to="/forgot-password" className="link_theme">
                         Forgot Password?
                       </Link>

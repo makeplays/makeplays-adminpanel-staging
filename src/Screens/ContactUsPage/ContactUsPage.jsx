@@ -46,6 +46,14 @@ const ContactUsPage = () => {
             },
         },
         {
+            key: "Reason",
+            text: "Reason",
+            sortable: true,
+            cell: (record) => {
+                return <p className="">{record?.reason ? record?.reason : "--"}</p>
+            },
+        },
+        {
             key: "Message",
             text: "Message",
             sortable: true,

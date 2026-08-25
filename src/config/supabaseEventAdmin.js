@@ -106,6 +106,19 @@ export const listAllVoices = async (reqData = {}) => {
   q = q.range((page - 1) * limit, page * limit - 1);
   const { data, count, error } = await q;
   if (error) return { status: false, message: error.message };
+
+  // How many teams are currently ON each voice — the context an admin needs
+  // before Pro-locking one (existing teams keep it either way, per the
+  // grandfather rule in enforce_team_voice_change, but an admin should know
+  // they're about to Pro-lock the voice 12 teams picked). RLS's
+  // "teams: super_admin read" policy has no org restriction, so this sees
+  // every team, not just the admin's own org.
+  const { data: usage } = await supabase.from('teams').select('voice_id').not('voice_id', 'is', null);
+  const countByVoice = (usage ?? []).reduce((m, t) => {
+    m[t.voice_id] = (m[t.voice_id] ?? 0) + 1;
+    return m;
+  }, {});
+
   return {
     status: true,
     count: count ?? 0,
@@ -118,6 +131,8 @@ export const listAllVoices = async (reqData = {}) => {
       preview_url: v.preview_url,
       image: v.image,
       preference: v.preference,
+      tier: v.tier,
+      teamCount: countByVoice[v.id] ?? 0,
     })),
   };
 };
