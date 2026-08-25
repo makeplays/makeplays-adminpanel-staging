@@ -31,7 +31,7 @@ if (env === "production") {
     CRYPTO_SECRET_KEY: process.env.REACT_APP_CRYPTO_SECRET_KEY,
     API_URL: `${API_URL}:2005/api/`,
     IMAGE_URL: `${API_URL}:2005`,
-    ADMIN_URL: "http://localhost:3000/",
+    ADMIN_URL: "http://localhost:3001/",
   };
 }
 

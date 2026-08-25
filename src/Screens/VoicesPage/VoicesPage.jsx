@@ -6,7 +6,7 @@ import ReactDatatable from "@ashvin27/react-datatable";
 import Papa from "papaparse";
 import { FaLink, FaPlay } from "react-icons/fa";
 import { useHistory } from "react-router-dom";
-import { listAllVoices, UpdateSelectedVoices } from '../../api/adminApi'
+import { listAllVoices, UpdateVoiceCuration } from '../../api/adminApi'
 import key from "../../config/index";
 import { assetUrl } from "../../lib/assetUrl";
 import { CustomToastHandler } from "../../hooks/useCustomToast";
@@ -49,7 +49,13 @@ const VoicePage = () => {
     const [fileValues, setFileValues] = useState();
     const [showAudioModal, setShowAudioModal] = useState(false);
     const [selectedAudioRecord, setSelectedAudioRecord] = useState(null);
-    const [selectedVoiceIds, setSelectedVoiceIds] = useState([]);
+    // Pending edits, keyed by the real uuid PK (record._id) — NOT voice_id
+    // (the ElevenLabs string id UpdateSelectedVoices used to key on, which
+    // never matched the "id" column it filtered on). Only what the admin
+    // actually touched lives here; everything else is read straight off the
+    // fetched record via `effective()`. This is what makes Submit safe to
+    // fire from any page without touching rows on pages never visited.
+    const [pending, setPending] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
@@ -57,24 +63,36 @@ const VoicePage = () => {
     const [selectedRecord, setSelectedRecord] = useState(null);
     const [playingVoiceId, setPlayingVoiceId] = useState(null);
 
-    const handleCheckboxChange = (voiceId) => {
+    const effective = (record, field) => pending[record._id]?.[field] ?? record[field];
+
+    const setPendingField = (id, field, value) => {
         setIsEdit(true);
-        setSelectedVoiceIds((prev) =>
-            prev.includes(voiceId) ? prev.filter(id => id !== voiceId) : [...prev, voiceId]
-        );
+        setPending((prev) => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
     };
 
-    const allCurrentSelected = voiceList?.length > 0 && voiceList.every(v => selectedVoiceIds.includes(v.voice_id));
+    const handleCheckboxChange = (record) => {
+        setPendingField(record._id, 'preference', !effective(record, 'preference'));
+    };
+
+    const handleTierChange = (record) => {
+        const next = effective(record, 'tier') === 'pro' ? 'free' : 'pro';
+        setPendingField(record._id, 'tier', next);
+    };
+
+    // Select-all is scoped to the CURRENT PAGE only — same as the underlying
+    // write now is. It no longer needs to reason about other pages at all.
+    const allCurrentSelected = voiceList?.length > 0 && voiceList.every(v => effective(v, 'preference'));
 
     const handleSelectAll = () => {
         setIsEdit(true);
-        if (allCurrentSelected) {
-            const currentIds = voiceList.map(v => v.voice_id);
-            setSelectedVoiceIds(prev => prev.filter(id => !currentIds.includes(id)));
-        } else {
-            const currentIds = voiceList.map(v => v.voice_id);
-            setSelectedVoiceIds(prev => Array.from(new Set([...prev, ...currentIds])));
-        }
+        const next = !allCurrentSelected;
+        setPending((prev) => {
+            const merged = { ...prev };
+            for (const v of voiceList ?? []) {
+                merged[v._id] = { ...merged[v._id], preference: next };
+            }
+            return merged;
+        });
     };
 
     const columns = [
@@ -92,8 +110,33 @@ const VoicePage = () => {
                 <input
                     type="checkbox"
                     className="checkboxBG"
-                    onChange={() => handleCheckboxChange(record.voice_id)}
-                    checked={selectedVoiceIds.includes(record.voice_id)} />
+                    onChange={() => handleCheckboxChange(record)}
+                    checked={!!effective(record, 'preference')} />
+            ),
+        },
+        {
+            key: "tier",
+            text: "Pro",
+            sortable: false,
+            align: "center",
+            cell: (record) => (
+                <input
+                    type="checkbox"
+                    className="checkboxBG"
+                    title="Requires Make Plays Pro"
+                    onChange={() => handleTierChange(record)}
+                    checked={effective(record, 'tier') === 'pro'} />
+            ),
+        },
+        {
+            key: "teamCount",
+            text: "In use",
+            sortable: false,
+            align: "center",
+            cell: (record) => (
+                <p className="text-center">
+                    {record.teamCount} team{record.teamCount === 1 ? '' : 's'}
+                </p>
             ),
         },
         {
@@ -191,19 +234,10 @@ const VoicePage = () => {
 
     const getAllVoices = async (reqData) => {
         try {
-            let { status, loading, error, message, result, count } = await listAllVoices(reqData);
+            let { status, message, result, count } = await listAllVoices(reqData);
             if (status) {
                 setVoiceList(result);
                 setCount(count)
-
-                const alreadySelected = result
-                    .filter(v => v.preference === true)
-                    .map(v => v.voice_id);
-
-                setSelectedVoiceIds(prev => {
-                    const merged = new Set([...prev, ...alreadySelected]);
-                    return Array.from(merged);
-                });
             }
         } catch (err) {
             console.log("getAllVoices__err", err);
@@ -284,18 +318,18 @@ const VoicePage = () => {
     };
 
     const submitSelectedVoices = async () => {
+        if (isSubmitting) return; // guards the double-tap the old button never had
+        setIsSubmitting(true);
         try {
-            const { status, loading, error, message } = await UpdateSelectedVoices({ selectedVoiceIds: selectedVoiceIds });
-            setIsEdit(false);
+            const { status, message } = await UpdateVoiceCuration(pending);
             if (status) {
                 CustomToastHandler({ msg: message });
                 setErrors({});
-            } else {
-                if (error) {
-                    setErrors(error);
-                } else if (message) {
-                    CustomToastHandler({ msg: message, type: "error" });
-                }
+                setPending({});
+                setIsEdit(false);
+                await getAllVoices({ page: pageNumer, limit });
+            } else if (message) {
+                CustomToastHandler({ msg: message, type: "error" });
             }
         } catch (err) {
             console.error(err);
@@ -328,8 +362,9 @@ const VoicePage = () => {
                                             <button
                                                 className="exchange_tableFileUploader table_extrabtns"
                                                 onClick={submitSelectedVoices}
+                                                disabled={isSubmitting}
                                             >
-                                                <p className="cmn_extraBtnsLabel m-0">Submit</p>
+                                                <p className="cmn_extraBtnsLabel m-0">{isSubmitting ? "Submitting..." : "Submit"}</p>
                                             </button>
                                         )}
                                     </div>

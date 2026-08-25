@@ -7,11 +7,9 @@
     "@supabase/supabase-js": "^2.108.2",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
     "axios": "^1.6.8",
     "bootstrap": "^5.3.2",
     "crypto-js": "^4.2.0",
-    "file-save": "^0.2.0",
     "file-saver": "^2.0.5",
     "is-empty": "^1.2.0",
     "jquery": "^3.7.1",
@@ -40,7 +38,8 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "dev": "PORT=3001 BROWSER=none react-scripts start",
+    "start": "PORT=3001 react-scripts start",
     "build": "DISABLE_ESLINT_PLUGIN=true react-scripts build",
     "build_local": "REACT_APP_MODE=local GENERATE_SOURCEMAP=false DISABLE_ESLINT_PLUGIN=true react-scripts build",
     "build_demo": "REACT_APP_MODE=demo GENERATE_SOURCEMAP=false DISABLE_ESLINT_PLUGIN=true react-scripts build",
@@ -68,6 +67,7 @@
   },
   "devDependencies": {
     "ajv": "^7.2.4",
+    "eslint": "^8.57.1",
     "husky": "^9.1.7"
   }
 }

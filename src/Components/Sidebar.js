@@ -1,15 +1,16 @@
 import React, { useEffect, useRef, useState } from "react";
 import { NavLink } from "react-router-dom";
-import { removeAuthToken } from "../lib/localStorage";
+import { logoutUser } from "../lib/localStorage";
 import { useHistory } from "react-router-dom";
 import { navLinks } from "../constant/staticData";
 import { useAlert } from "../hooks/useAlert";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 
 function Sidebar() {
   const history = useHistory();
   //redux-state
   let { restrictions, role, accessLevel } = useSelector((state) => state.isRun);
+  const dispatch = useDispatch();
   const { showAlert } = useAlert();
   const sidebarRef = useRef();
 
@@ -18,13 +19,10 @@ function Sidebar() {
     if (saved) sidebarRef.current.scrollTop = saved;
   }, []);
 
-  const onConfirmHandle = async () => {
-    try {
-      history.push("/");
-      removeAuthToken();
-    } catch (err) {
-      console.log("onConfirmHandle__err", err);
-    }
+  const onConfirmHandle = () => {
+    // logoutUser handles revoking the Supabase session, clearing every auth
+    // key, and redirecting — same path every other logout trigger uses.
+    logoutUser(dispatch);
   };
 
   const logutAlertHandle = () => {

@@ -190,21 +190,45 @@ export const ReplyContactUs = async (data) => {
   return { status: true, message: "Reply sent successfully" };
 };
 
-// ─── Voice curation (Wave 10 audit fix — was 100% legacy, disconnected
-// from what the app actually reads: voices.preference / voices.image) ──
-export const UpdateSelectedVoices = async (data) => {
-  const ids = data?.selectedVoiceIds ?? [];
-  // full-replace semantics: the multi-select IS the new preferred set
-  const [{ error: onErr }, { error: offErr }] = await Promise.all([
-    ids.length
-      ? supabase.from("voices").update({ preference: true }).in("id", ids)
-      : Promise.resolve({ error: null }),
-    ids.length
-      ? supabase.from("voices").update({ preference: false }).not("id", "in", `(${ids.join(",")})`)
-      : supabase.from("voices").update({ preference: false }).neq("id", "00000000-0000-0000-0000-000000000000"),
-  ]);
-  if (onErr || offErr) return fail(onErr || offErr);
-  return { status: true, message: "Preferred voices updated successfully" };
+// ─── Voice curation (2026-08 rewrite — replaces UpdateSelectedVoices) ──────
+// UpdateSelectedVoices had two bugs, one masking the other:
+//  1. It filtered on "id" (the uuid PK) but the screen collected
+//     record.voice_id (the ElevenLabs string id) — zero overlap between
+//     those columns, so the update could never match a row. The Submit
+//     button for preference has never actually worked.
+//  2. It used full-replace semantics: everything NOT in the selected set got
+//     preference=false. Fixing bug #1 alone would have activated this one —
+//     the screen's selection only accumulates voices from pages the admin
+//     has actually visited, so submitting from page 1 would have silently
+//     wiped preference on every voice living on page 2+.
+//
+// This version takes an explicit per-voice diff and writes ONLY what
+// changed, keyed by the real uuid PK. Also used for the tier (free/pro)
+// toggle — same mechanism, same safety property.
+//
+// changes: { [voiceUuid]: { preference?: boolean, tier?: 'free' | 'pro' } }
+export const UpdateVoiceCuration = async (changes) => {
+  const entries = Object.entries(changes || {});
+  if (!entries.length) return { status: true, message: "Nothing to update" };
+
+  const idsWhere = (pred) => entries.filter(([, c]) => pred(c)).map(([id]) => id);
+  const groups = [
+    { ids: idsWhere((c) => c.preference === true), patch: { preference: true } },
+    { ids: idsWhere((c) => c.preference === false), patch: { preference: false } },
+    { ids: idsWhere((c) => c.tier === "free"), patch: { tier: "free" } },
+    { ids: idsWhere((c) => c.tier === "pro"), patch: { tier: "pro" } },
+  ].filter((g) => g.ids.length);
+
+  // Sequential, not Promise.all — the old code raced two updates whose
+  // predicates overlapped (undefined ordering). These groups are disjoint by
+  // construction (a voice contributes preference=true XOR =false, same for
+  // tier), so sequencing here is about not repeating that mistake, not about
+  // correctness of THIS particular set.
+  for (const { ids, patch } of groups) {
+    const { error } = await supabase.from("voices").update(patch).in("id", ids);
+    if (error) return fail(error);
+  }
+  return { status: true, message: "Voice settings updated successfully" };
 };
 
 export const UploadImage = async (data) => {

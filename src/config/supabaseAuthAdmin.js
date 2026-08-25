@@ -4,12 +4,19 @@
 //
 // The admin panel authenticates as a Supabase user flagged is_super_admin.
 import { supabase } from "./supabase";
-import { setAuthToken } from "../lib/localStorage";
+import { setAuthToken, removeAuthToken } from "../lib/localStorage";
 import { SET_AUTHENTICATION } from "../constant";
+import { setPersistMode, markLoginAt } from "../lib/session";
 
-// login({ email, password }, dispatch) -> { status, message }
+// login({ email, password, rememberMe }, dispatch) -> { status, message }
 export const login = async (data, dispatch) => {
   try {
+    // Must be set BEFORE signInWithPassword — the Supabase client's storage
+    // adapter (config/supabase.js) reads this to decide whether the session
+    // it's about to persist goes to localStorage ("Keep me signed in") or
+    // sessionStorage (dies with the tab).
+    setPersistMode(data?.rememberMe ? "local" : "session");
+
     const { data: auth, error } = await supabase.auth.signInWithPassword({
       email: data.email,
       password: data.password,
@@ -24,16 +31,22 @@ export const login = async (data, dispatch) => {
       .single();
     if (!profile?.is_super_admin) {
       await supabase.auth.signOut();
+      removeAuthToken();
       return { status: false, message: "Not authorized for the admin panel." };
     }
     if (profile.admin_role === "subadmin" && profile.activate === false) {
       await supabase.auth.signOut();
+      removeAuthToken();
       return { status: false, message: "Your account has been deactivated." };
     }
 
     const token = auth.session?.access_token;
     setAuthToken(token);
     localStorage.setItem("refreshtoken", auth.session?.refresh_token ?? "");
+    // Stamps the 12h absolute-session-cap clock. Deliberately NOT touched by
+    // refreshToken() below — renewing the access token must never push the
+    // ceiling out, or there would be no real cap at all.
+    markLoginAt();
     // NOTE: the sidebar/ConditionRoute gate on role==='superadmin' or
     // accessLevel==='Admin', and treat a FALSY `restrictions` as "no limits".
     // An empty array is truthy — superadmins keep restrictions undefined;
