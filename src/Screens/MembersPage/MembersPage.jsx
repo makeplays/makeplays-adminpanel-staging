@@ -14,7 +14,7 @@ import { RiImportFill } from "react-icons/ri";
 import { MembersPageModels } from "../../Modals/MembersPageModels";
 import { Images } from "../../Images";
 import { AiFillAudio } from "react-icons/ai";
-import { listAllMember, DeleteMember, getAllTeams } from '../../api/memberApi'
+import { listAllMember, DeleteMember } from '../../api/memberApi'
 import { listAllTeams } from '../../api/teamApi'
 import key from "../../config/index";
 import { assetUrl } from "../../lib/assetUrl";
