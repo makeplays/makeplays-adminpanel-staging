@@ -12,20 +12,40 @@ const EmailTemplatePage = () => {
 
   const baseColumns = [
     {
-      key: "",
+      // Not sortable: `index` is the row's position on the CURRENT page, so
+      // sorting by it would reorder rows against a number that is itself
+      // derived from the order — and the header would offer to sort by a
+      // column that carries no data of its own.
+      key: "sno",
       text: "S.No",
       align: "center",
-      sortable: true,
+      sortable: false,
       cell: (record, index) => <p className="text-center">{index + 1}</p>,
     },
     {
+      // Sortable now that there is more than one page to sort across, and
+      // the column the filter box searches.
       key: "subject",
       text: "Subject",
       className: "text-center",
       align: "center",
-      sortable: false,
+      sortable: true,
       cell: (record) => (
         <p className="text-center">{record?.subject ? record.subject : "--"}</p>
+      )
+    },
+    {
+      // The identifier is what actually distinguishes these rows — several
+      // subjects are near-identical ("Register Verification Code" vs "Resend
+      // Verification Code"), and callers reference templates by identifier,
+      // not by subject. Worth a column now that all 18 are reachable.
+      key: "identifier",
+      text: "Identifier",
+      className: "text-center",
+      align: "center",
+      sortable: true,
+      cell: (record) => (
+        <p className="text-center">{record?.identifier ? record.identifier : "--"}</p>
       )
     }
   ];
@@ -62,13 +82,22 @@ const EmailTemplatePage = () => {
     return cols;
   }, [user]);
 
+  // Paging, filtering and the length menu are all CLIENT-side here: unlike
+  // Voices (which pages against the server and so needs dynamic={true}),
+  // getEmailTemplate fetches every row in one call. Leaving page_size at 10
+  // with show_pagination off meant the table rendered exactly one page and
+  // offered no way to reach the rest — 18 rows in the table, 10 reachable in
+  // the panel, and the other 8 (SEND_TEAM_WELCOME, TOURNAMENT_TEAM_INVITE,
+  // the tournament staff/parent invites, the join-team and DJ invites…)
+  // silently unreachable rather than missing.
   const config = {
     page_size: 10,
+    length_menu: [10, 50, 100, 200],
     filename: "EmailTemplates",
     no_data_text: "No Email Templates found!",
     language: {
       length_menu: "Show _MENU_ result per page",
-      filter: "Filter in records...",
+      filter: "Filter in templates...",
       info: "Showing _START_ to _END_ of _TOTAL_ records",
       pagination: {
         first: "First",
@@ -77,10 +106,10 @@ const EmailTemplatePage = () => {
         last: "Last",
       },
     },
-    show_length_menu: false,
-    show_filter: false,
-    show_pagination: false,
-    show_info: false,
+    show_length_menu: true,
+    show_filter: true,
+    show_pagination: true,
+    show_info: true,
   };
 
   const history = useHistory();
