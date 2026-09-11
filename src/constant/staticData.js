@@ -206,6 +206,6 @@ export const navLinks = [
         exact: true,
         sidemenu: true,
         type: "private",
-        image: require("../assets/images/faqIcon.svg").default,
+        image: require("../assets/images/ticket.svg").default,
     },
 ];
