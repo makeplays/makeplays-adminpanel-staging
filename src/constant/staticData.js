@@ -200,4 +200,12 @@ export const navLinks = [
         type: "private",
         image: require("../assets/images/faqIcon.svg").default,
     },
+    {
+        path: "/coupons",
+        name: "Coupons",
+        exact: true,
+        sidemenu: true,
+        type: "private",
+        image: require("../assets/images/faqIcon.svg").default,
+    },
 ];

@@ -52,6 +52,9 @@ import BroadcastPage from "./Screens/BroadcastPage/BroadcastPage.jsx";
 import { AddBroadcastpage } from "./Screens/BroadcastPage/AddBroadcastPage.jsx";
 import { ReplyContactUsPage } from "./Screens/ContactUsPage/ReplyContactUsPage.js";
 import FaqPage from "./Screens/FaqPage/FaqPage.jsx";
+import CouponPage from "./Screens/CouponPage/CouponPage.jsx";
+import AddCouponPage from "./Screens/CouponPage/AddCouponPage.jsx";
+import EditCouponPage from "./Screens/CouponPage/EditCouponPage.jsx";
 import { AddFaqPage } from "./Screens/FaqPage/AddFaqPage.jsx";
 import { EditFaqPage } from "./Screens/FaqPage/EditFaqPage.jsx";
 import DataDeletion from "./Screens/DataDeletion/DataDeletion.jsx";
@@ -115,6 +118,9 @@ function App() {
     { path: "/broadcast", component: BroadcastPage, type: "private" },
     { path: "/broadcast/add", component: AddBroadcastpage, type: "private" },
     { path: "/faq", component: FaqPage, type: "private" },
+    { path: "/coupons", component: CouponPage, type: "private" },
+    { path: "/coupons/add", component: AddCouponPage, type: "private" },
+    { path: "/coupons/edit", component: EditCouponPage, type: "private" },
     { path: "/faq/add", component: AddFaqPage, type: "private" },
     { path: "/faq/edit", component: EditFaqPage, type: "private" },
     { path: "/data-deletion", component: DataDeletion, type: "public" },

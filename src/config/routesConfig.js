@@ -38,6 +38,10 @@ const nav = {
         "/faq/add",
         "/faq/edit"
     ],
+    "/coupons": [
+        "/coupons/add",
+        "/coupons/edit"
+    ],
 };
 
 module.exports = nav;

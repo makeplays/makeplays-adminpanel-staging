@@ -2147,3 +2147,43 @@ table tr td {
 }
 
 /* end of media queries */
+/* ─── Coupon screens ─────────────────────────────────────────────────────────
+   The panel has rp_label for field labels but no class for the helper text
+   under a field. Bootstrap's .text-muted assumes a light background and is
+   near-invisible on this dark theme, so this uses the same --placeholder token
+   the inputs do, which already flips correctly in light mode. */
+.cp_hint {
+  margin: 0.35rem 0 0;
+  color: var(--placeholder);
+  font-size: var(--font_thirteen);
+  font-family: "Montserrat", sans-serif;
+  line-height: 1.45;
+}
+
+.cp_hint_warn {
+  color: #E0AC55;
+}
+
+/* Store-registration cards on the coupon list. */
+.cp_slot_card {
+  border: 1px solid var(--box_border);
+  border-radius: 0.5rem;
+  padding: 0.75rem 0.9rem;
+  min-width: 200px;
+}
+
+.cp_slot_title {
+  margin: 0;
+  color: var(--white);
+  font-size: var(--font_thirteen);
+  font-weight: var(--weight_six);
+  font-family: "Montserrat", sans-serif;
+}
+
+.cp_section_title {
+  margin: 0;
+  color: var(--white);
+  font-size: var(--font_fifteen);
+  font-weight: var(--weight_six);
+  font-family: "Montserrat", sans-serif;
+}
