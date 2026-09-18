@@ -593,7 +593,8 @@ input:checked+.slider:before {
 .sidebar .sidebar__scrollUl {
   /* max-height: 85vh !important; */
   overflow-y: auto !important;
-  height: calc(100vh - 81px);
+  /* 81px logo holder + ~89px switcher block (label + control + padding). */
+  height: calc(100vh - 170px);
   margin: 0;
   padding: 25px 0px;
   border-right: 1px solid var(--box_border);
@@ -2186,4 +2187,434 @@ table tr td {
   font-size: var(--font_fifteen);
   font-weight: var(--weight_six);
   font-family: "Montserrat", sans-serif;
+}
+
+/* ─── Sport switcher + sidebar scope grouping ──────────────────────────────
+   The sidebar column is Col xl={2} (~200px) and the sports catalogue seeds 10
+   active rows, so the switcher is a dropdown rather than the pill/segmented
+   style used elsewhere: pills would wrap several rows deep and push the nav
+   below the fold. Colours come from the existing tokens so .lightTheme works
+   without a second ruleset. */
+.sport_switcher {
+  position: relative;
+  /* The logo holder above and .sidebar__scrollUl below both carry the sidebar's
+     right edge; without it here the vertical rule breaks at the switcher.
+     Matches .sidebar_logo_holder (2px #2e2e2e), not the lighter --box_border. */
+  border-right: 2px solid #2e2e2e;
+  border-bottom: 1px solid var(--box_border);
+  background-color: var(--body_bg);
+}
+
+.sport_switcher_label {
+  margin: 0 0 6px;
+  font-size: var(--lower_font);
+  font-weight: var(--weight_six);
+  letter-spacing: 0.08em;
+  color: var(--placeholder);
+}
+
+.sport_switcher_btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--searchbar_bg);
+  border: 1px solid var(--static-primary1);
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.sport_switcher_btn--loading,
+.sport_switcher_btn--empty {
+  border-color: var(--box_border);
+  cursor: default;
+  opacity: 0.7;
+}
+
+.sport_switcher_icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.sport_switcher_icon--fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gradient1);
+  color: var(--static-white-900);
+  font-size: var(--font_twelve);
+  font-weight: var(--weight_six);
+}
+
+.sport_switcher_name {
+  flex: 1;
+  margin: 0;
+  color: var(--white);
+  font-size: var(--font_thirteen);
+  font-weight: var(--weight_five);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sport_switcher_caret {
+  color: var(--placeholder);
+  font-size: var(--font_twelve);
+  transition: transform 0.15s ease;
+}
+
+.sport_switcher_caret.is_open {
+  transform: rotate(180deg);
+}
+
+.sport_switcher_menu {
+  position: absolute;
+  z-index: 20;
+  left: 1.5rem;
+  right: 1.5rem;
+  margin-top: 4px;
+  padding: 4px !important;
+  max-height: 260px;
+  overflow-y: auto;
+  background: var(--dash_box);
+  border: 1px solid var(--box_border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px var(--black2);
+}
+
+.sport_switcher_option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 8px;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.sport_switcher_option:hover {
+  background: var(--gradient1);
+}
+
+.sport_switcher_option:hover .sport_switcher_name {
+  color: var(--static-white-900);
+}
+
+.sport_switcher_option.is_active .sport_switcher_name {
+  font-weight: var(--weight_six);
+}
+
+.sport_switcher_check {
+  color: var(--static-primary1);
+  font-size: var(--font_twelve);
+}
+
+.sport_switcher_option:hover .sport_switcher_check {
+  color: var(--static-white-900);
+}
+
+/* Section headings. Sport-dependent links also carry a left accent bar so the
+   grouping reads without relying on colour perception alone. */
+.sidebar_group_head {
+  max-width: 100% !important;
+  min-width: 100% !important;
+  padding: 4px 1rem 8px 1.5rem;
+  margin-bottom: 4px;
+  cursor: default !important;
+}
+
+.sidebar_group_label {
+  font-size: var(--lower_font);
+  font-weight: var(--weight_six);
+  letter-spacing: 0.08em;
+  color: var(--placeholder);
+}
+
+.sidebar_group_head.sport_scoped .sidebar_group_label {
+  color: var(--static-primary1);
+}
+
+.sidebar_group_head:hover {
+  background: transparent !important;
+}
+
+.sport_scoped_link {
+  border-left: 3px solid var(--static-primary1);
+}
+
+/* ─── Announcement categories & types tab ──────────────────────────────────
+   Master-detail management of the per-sport category/type catalogue. Colours
+   come from the existing tokens so .lightTheme needs no second ruleset. */
+.ann_tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid var(--box_border);
+}
+
+.ann_tab {
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 8px 14px;
+  margin-bottom: -1px;
+  color: var(--placeholder);
+  font-size: var(--font_thirteen);
+  font-weight: var(--weight_five);
+  cursor: pointer;
+}
+
+.ann_tab.is_active {
+  color: var(--white);
+  border-bottom-color: var(--static-primary1);
+}
+
+.ann_panel {
+  background: var(--dash_box);
+  border: 1px solid var(--box_border);
+  border-radius: 8px;
+  padding-bottom: 8px;
+}
+
+.ann_panel_head {
+  margin: 0;
+  padding: 12px 16px 8px;
+  font-size: var(--lower_font);
+  font-weight: var(--weight_six);
+  letter-spacing: 0.08em;
+  color: var(--static-primary1);
+}
+
+.ann_hint {
+  font-size: var(--font_twelve);
+  margin-bottom: 8px;
+}
+
+.ann_list {
+  list-style: none;
+  margin: 0;
+  padding: 0 8px;
+}
+
+.ann_list_item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.ann_list_item.is_static {
+  cursor: default;
+}
+
+.ann_list_item:hover {
+  background: var(--searchbar_bg);
+}
+
+.ann_list_item.is_active {
+  background: var(--gradient1);
+}
+
+.ann_list_item.is_active .ann_list_label,
+.ann_list_item.is_active .ann_count {
+  color: var(--static-white-900);
+}
+
+.ann_list_label {
+  flex: 1;
+  color: var(--white);
+  font-size: var(--font_thirteen);
+  text-transform: capitalize;
+}
+
+.ann_count {
+  color: var(--placeholder);
+  font-size: var(--font_twelve);
+  white-space: nowrap;
+}
+
+.ann_icon_btn {
+  background: transparent;
+  border: 0;
+  color: var(--placeholder);
+  cursor: pointer;
+  padding: 2px 6px;
+  font-size: var(--font_twelve);
+}
+
+.ann_icon_btn:hover {
+  color: var(--table_red_btn);
+}
+
+.ann_add_row {
+  display: flex;
+  gap: 8px;
+  padding: 10px 16px 6px;
+}
+
+.ann_input {
+  flex: 1;
+  min-width: 0;
+  background: var(--searchbar_bg);
+  border: 1px solid var(--box_border);
+  border-radius: 6px;
+  padding: 7px 10px;
+  color: var(--white);
+  font-size: var(--font_thirteen);
+}
+
+.ann_input::placeholder {
+  color: var(--placeholder);
+}
+
+.ann_input:focus {
+  outline: none;
+  border-color: var(--static-primary1);
+}
+
+.ann_add_btn {
+  background: var(--gradient1);
+  border: 0;
+  border-radius: 6px;
+  color: var(--static-white-900);
+  padding: 0 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.ann_add_btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.ann_chip_wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 16px 4px;
+}
+
+.ann_chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--searchbar_bg);
+  border: 1px solid var(--box_border);
+  border-radius: 999px;
+  padding: 3px 10px;
+  color: var(--white);
+  font-size: var(--font_twelve);
+}
+
+.ann_chip_x {
+  background: transparent;
+  border: 0;
+  color: var(--placeholder);
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.ann_chip_x:hover {
+  color: var(--table_red_btn);
+}
+
+/* ─── "Applies to" scope pills (email templates, FAQ) ──────────────────────
+   Two options only, so pills rather than a dropdown: both choices stay visible
+   and it is one tap. Tokens keep .lightTheme working without a second block. */
+.applies_pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.applies_pill {
+  background: var(--searchbar_bg);
+  border: 1px solid var(--box_border);
+  border-radius: 999px;
+  padding: 7px 18px;
+  color: var(--white);
+  font-size: var(--font_thirteen);
+  font-weight: var(--weight_five);
+  cursor: pointer;
+}
+
+.applies_pill:hover:not(:disabled) {
+  border-color: var(--static-primary1);
+}
+
+.applies_pill.is_active {
+  background: var(--gradient1);
+  border-color: var(--static-primary1);
+  color: var(--static-white-900);
+}
+
+.applies_pill:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.applies_hint {
+  margin: 8px 0 0;
+  font-size: var(--font_twelve);
+  color: var(--placeholder);
+}
+
+/* Badge in the list rows — same vocabulary as the pills. */
+.scope_badge {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: var(--font_twelve);
+  border: 1px solid var(--box_border);
+  color: var(--placeholder);
+  white-space: nowrap;
+}
+
+.scope_badge.is_sport {
+  border-color: var(--static-primary1);
+  color: var(--static-primary1);
+}
+
+/* ── FAQ table: clamped answers and media placeholders ──────────────────────
+   The Answer column holds multi-step instructions, several past 300
+   characters. Unclamped, one row stood taller than the whole rest of the
+   table. Two lines is enough to tell two answers apart; the full text stays
+   available via the cell's title attribute and on the edit screen. */
+.table_clamp_2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+  max-width: 320px;
+  margin-inline: auto;
+}
+
+/* Keeps a row without artwork the same height as one with it, so the columns
+   line up instead of stepping. Sized by the card class it is paired with —
+   tableFaqImgViewCard is 120x120, tableVideoViewCard wraps a 220x130 video. */
+.table_media_placeholder {
+  border: 1px dashed var(--box_border);
+  border-radius: 5px;
+  color: var(--placeholder);
+  font-size: var(--font_twelve);
+  background-color: transparent;
+}
+
+.table_media_placeholder.is_video {
+  width: 220px;
+  height: 130px;
+  margin: auto;
 }

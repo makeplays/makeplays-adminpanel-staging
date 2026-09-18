@@ -9,14 +9,18 @@ import Header from "../../Components/Header";
 import { SportPageModels } from "../../Modals/SportPageModels";
 import { CustomToastHandler } from "../../hooks/useCustomToast";
 import { getAnnouncementTemplates, deleteAnnouncementTemplate } from "../../api/adminApi";
+import CategoriesAndTypesTab from "./CategoriesAndTypesTab";
+import { useSport } from "../../context/sportContext";
 
 const AnnouncementTemplatePage = () => {
+  const [tab, setTab] = useState("phrases");
   const [list, setList] = useState([]);
   const [count, setCount] = useState(0);
   const [deleteRecord, setDeleteRecord] = useState({});
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const history = useHistory();
   const user = useSelector((state) => state.isRun);
+  const { sportId, sport, loading: sportLoading } = useSport();
 
   const baseColumns = [
     {
@@ -97,16 +101,30 @@ const AnnouncementTemplatePage = () => {
     return cols;
   }, [user]);
 
+  // Refetch whenever the active sport changes — the reactive-switching
+  // requirement: the list follows the switcher with no page reload.
   useEffect(() => {
+    if (!sportId) {
+      setList([]);
+      setCount(0);
+      return;
+    }
     fetchTemplates();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sportId]);
 
-  const fetchTemplates = async (reqData) => {
+  const fetchTemplates = async (reqData = {}) => {
+    // Guard rather than query unscoped: without a sport the list would show
+    // every sport's phrases, which is exactly the leak this work closes.
+    if (!sportId) return;
     try {
-      const { status, result, count } = await getAnnouncementTemplates(reqData);
+      const { status, result, count } = await getAnnouncementTemplates({ ...reqData, sportId });
       if (status) {
         setList(result);
         setCount(count);
+      } else {
+        setList([]);
+        setCount(0);
       }
     } catch (err) {
       console.log("fetchTemplates__err", err);
@@ -163,24 +181,55 @@ const AnnouncementTemplatePage = () => {
             <Header title={"Announcement Templates"} />
             <div className="common_page_scroller pb-5 mt-3 mt-sm-5 pe-2">
               <div className="exchange_table_holder dashboard_box rounded-3 mt-4 tabletop">
-                <div className="d-flex justify-content-end align-items-center px-3 my-3">
-                  {user?.accessLevel === "Admin" && (
-                    <button
-                      className="exchange_tableFileUploader table_extrabtns"
-                      onClick={() => history.push("/announcement-template/add")}>
-                      <IoIosAdd size={25} />
-                      <p className="cmn_extraBtnsLabel m-0">Add Template</p>
-                    </button>
-                  )}
+                <div className="ann_tabs px-3 pt-3">
+                  <button
+                    type="button"
+                    className={`ann_tab ${tab === "phrases" ? "is_active" : ""}`}
+                    onClick={() => setTab("phrases")}>
+                    Phrases
+                  </button>
+                  <button
+                    type="button"
+                    className={`ann_tab ${tab === "categories" ? "is_active" : ""}`}
+                    onClick={() => setTab("categories")}>
+                    Categories &amp; Types
+                  </button>
                 </div>
-                <ReactDatatable
-                  config={config}
-                  records={list}
-                  columns={columns}
-                  dynamic={true}
-                  total_record={count}
-                  onChange={handlePagination}
-                />
+
+                {tab === "phrases" ? (
+                  <>
+                    {!sportLoading && !sportId && (
+                      <p className="dash_graymed_text px-3 pt-3 m-0">
+                        No active sport selected. Activate a sport under Sports to manage phrases.
+                      </p>
+                    )}
+                    {sportId && (
+                      <p className="dash_graymed_text px-3 pt-3 m-0">
+                        Showing phrases for <b>{sport?.name}</b>.
+                      </p>
+                    )}
+                    <div className="d-flex justify-content-end align-items-center px-3 my-3">
+                      {user?.accessLevel === "Admin" && (
+                        <button
+                          className="exchange_tableFileUploader table_extrabtns"
+                          onClick={() => history.push("/announcement-template/add")}>
+                          <IoIosAdd size={25} />
+                          <p className="cmn_extraBtnsLabel m-0">Add Template</p>
+                        </button>
+                      )}
+                    </div>
+                    <ReactDatatable
+                      config={config}
+                      records={list}
+                      columns={columns}
+                      dynamic={true}
+                      total_record={count}
+                      onChange={handlePagination}
+                    />
+                  </>
+                ) : (
+                  <CategoriesAndTypesTab canEdit={user?.accessLevel === "Admin"} />
+                )}
               </div>
             </div>
           </Col>

@@ -24,6 +24,7 @@ import {
   listAppleCodes,
   DeleteAppleCode,
   ClearUnassignedAppleCodes,
+  parseAppleCodes,
 } from "../../config/supabaseCoupons";
 
 // One place for the state colours so the table and the legend agree.
@@ -297,16 +298,28 @@ const CouponPage = () => {
     }
     setFileName(file.name);
     Papa.parse(file, {
-      // No header:true — Apple's export is a single unlabelled column, and
-      // treating row 1 as a header would silently drop a real code.
+      // No header:true — Apple's export has no header row, and treating row 1
+      // as one would silently drop a real code.
       skipEmptyLines: true,
       complete: (results) => {
-        // Flatten every cell; UploadAppleCodes filters out anything that
-        // isn't code-shaped, including a header if one is present.
-        const codes = (results.data || [])
-          .flat()
-          .map((c) => String(c || "").trim())
-          .filter(Boolean);
+        // Apple's export is TWO columns per row — the code, then a redemption
+        // URL containing that same code:
+        //
+        //   E73KNLLPJEM7NAH4XH,https://apps.apple.com/redeem?…&code=E73KNLLPJEM7NAH4XH
+        //
+        // This used to .flat() every cell, which counted both columns and
+        // turned a 500-row file into 1000 "codes" — half of them URLs that
+        // would sit in the pool looking valid and be handed to a customer to
+        // paste into the App Store, where they can never work.
+        //
+        // Join each ROW back into a line and let parseAppleCodes recover the
+        // code from it. Sharing that one parser with the upload is the point:
+        // when the preview and the insert had separate implementations, the
+        // preview reported 1000 and nobody noticed until a real CSV was tried.
+        const rows = (results.data || [])
+          .map((row) => (Array.isArray(row) ? row.join(",") : String(row || "")))
+          .filter((r) => r.trim());
+        const codes = parseAppleCodes(rows.join("\n"));
         if (!codes.length) {
           CustomToastHandler({ msg: "No codes found in that file.", type: "error" });
           return;
@@ -619,7 +632,7 @@ const CouponPage = () => {
             </div>
             <p className="cp_hint">
               {poolCodes.trim()
-                ? `${poolCodes.trim().split(/[\s,]+/).filter(Boolean).length} codes ready to add.`
+                ? `${parseAppleCodes(poolCodes).length} codes ready to add.`
                 : "One per line, or comma-separated. A header row is ignored."}
             </p>
           </div>

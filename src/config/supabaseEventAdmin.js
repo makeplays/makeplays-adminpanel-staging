@@ -9,6 +9,12 @@ const eventAdminRow = (e) => ({
   eventType: e.event_type,
   date: e.starts_at,
   time: e.event_time,
+  // event_end_time is set on 315 of production's 327 events and was simply
+  // never mapped, so the admin had no end time to show and fell back to
+  // `duration` — a text column the app derives, which renders as "-47:00" when
+  // an event crosses midnight. Start and End are what the Add Event form asks
+  // for; duration stays mapped for the edit screen, which still writes it.
+  endTime: e.event_end_time,
   duration: e.duration,
   location: e.location,
   homeOrAway: e.home_or_away,
@@ -32,13 +38,26 @@ const eventAdminRow = (e) => ({
 export const listAllEvent = async (reqData = {}) => {
   const page = Number(reqData.page) || 1;
   const limit = Number(reqData.limit) || 10;
+  const { sportId } = reqData;
+  if (!sportId) return { status: false, message: 'No active sport selected', count: 0, result: [] };
   let q = supabase
     .from('events')
     .select(
-      '*, team:teams!team_id(name), opponent:opponents(team_name), opponentTeam:teams!opponent_team_id(name)',
+      // !inner so the sport filter on the embedded team actually restricts the
+      // rows. events has a `sport` text column but no sport_id FK, and the
+      // team's sport is the authoritative answer anyway — an event belongs to
+      // whatever sport its team plays.
+      '*, team:teams!team_id!inner(name, sport_id), opponent:opponents(team_name), opponentTeam:teams!opponent_team_id(name)',
       { count: 'exact' },
     )
+    .eq('team.sport_id', sportId)
     .order('starts_at', { ascending: false });
+  // The Teams dropdown on the Events page has always passed a teamId and this
+  // function never read it, so choosing a team narrowed nothing — the table
+  // kept showing every team's events for the sport. listAllMember has had the
+  // equivalent line all along, which is why Members filtered and Events did
+  // not. Absent teamId (the "All Teams" default) leaves the query unfiltered.
+  if (reqData.teamId) q = q.eq('team_id', reqData.teamId);
   const search = reqData.search || reqData.title || reqData.name;
   if (search) q = q.ilike('title', `%${search}%`);
   q = q.range((page - 1) * limit, page * limit - 1);
@@ -158,15 +177,34 @@ const syncTemplateAudios = async (templateId) => {
 };
 
 export const addAnnouncementTemplate = async (data = {}) => {
+  const { sportId, categoryId, typeId } = data;
+  if (!sportId) return { status: false, message: 'No active sport selected' };
+  if (!categoryId) return { status: false, message: 'Category is required' };
+
+  // The text columns stay authoritative for mobile (fetchAnnouncementChunks
+  // groups by category/type strings) and for announcement-tts, which resolves
+  // the type row by (category, type). Resolve them from the ids so the two
+  // representations cannot drift.
+  const [{ data: cat }, { data: ty }] = await Promise.all([
+    supabase.from('announcement_categories').select('name').eq('id', categoryId).maybeSingle(),
+    typeId
+      ? supabase.from('announcement_types').select('type').eq('id', typeId).maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
+  if (!cat) return { status: false, message: 'Category not found' };
+
   const { data: row, error } = await supabase.from('announcement_templates').insert({
-    category: data.category,
-    type: data.type,
+    sport_id: sportId,
+    category_id: categoryId,
+    type_id: typeId || null,
+    category: cat.name,
+    type: ty?.type ?? data.type,
     phrase: data.phrase,
     parsed_chunks: parsePhrase(data.phrase),
     status: data.status || 'active',
   }).select('id').single();
   if (error) return { status: false, message: error.message };
-  await syncTemplateAudios(row.id); // generate chunk audios for all voices
+  await syncTemplateAudios(row.id); // generate chunk audios for this sport's voices
   return { status: true, message: 'Announcement template added successfully' };
 };
 
@@ -176,9 +214,29 @@ export const updateAnnouncementTemplate = async (data = {}) => {
   const { data: existing } = await supabase
     .from('announcement_templates').select('phrase, parsed_chunks').eq('id', id).single();
   const update = { updated_at: new Date().toISOString() };
-  if (data.category !== undefined) update.category = data.category;
-  if (data.type !== undefined) update.type = data.type;
   if (data.status !== undefined) update.status = data.status;
+
+  // Category/type move together with their ids so the FK and the text column
+  // can never disagree — mobile groups on the text, announcement-tts resolves
+  // the type row by it, and a mismatch would silently hide phrases.
+  if (data.categoryId !== undefined) {
+    const { data: cat } = await supabase
+      .from('announcement_categories').select('name').eq('id', data.categoryId).maybeSingle();
+    if (!cat) return { status: false, message: 'Category not found' };
+    update.category_id = data.categoryId;
+    update.category = cat.name;
+  } else if (data.category !== undefined) {
+    update.category = data.category;
+  }
+
+  if (data.typeId !== undefined) {
+    const { data: ty } = await supabase
+      .from('announcement_types').select('type').eq('id', data.typeId).maybeSingle();
+    update.type_id = data.typeId || null;
+    if (ty) update.type = ty.type;
+  } else if (data.type !== undefined) {
+    update.type = data.type;
+  }
   const phraseChanged = data.phrase !== undefined && data.phrase !== existing?.phrase;
   if (phraseChanged) {
     update.phrase = data.phrase;
@@ -205,9 +263,15 @@ export const deleteAnnouncementTemplate = async (data = {}) => {
 export const getAnnouncementTemplates = async (reqData = {}) => {
   const page = Number(reqData.page) || 1;
   const limit = Number(reqData.limit) || 10;
+  const { sportId } = reqData;
+  // Refuse rather than silently listing every sport's phrases. Callers pass the
+  // active sport; a missing one is a bug in the caller, and returning unscoped
+  // rows would be the exact cross-contamination this work exists to prevent.
+  if (!sportId) return { status: false, message: 'No active sport selected', count: 0, result: [] };
   let q = supabase
     .from('announcement_templates')
     .select('*', { count: 'exact' })
+    .eq('sport_id', sportId)
     .order('created_at', { ascending: false });
   const search = reqData.search || reqData.phrase;
   if (search) q = q.ilike('phrase', `%${search}%`);
@@ -222,10 +286,187 @@ export const getAnnouncementTemplates = async (reqData = {}) => {
       _id: t.id,
       category: t.category,
       type: t.type,
+      // ids so the edit form can preselect the dropdowns without matching on text
+      categoryId: t.category_id,
+      typeId: t.type_id,
+      sportId: t.sport_id,
       phrase: t.phrase,
       parsedChunks: t.parsed_chunks,
       status: t.status,
       createdAt: t.created_at,
     })),
   };
+};
+
+// ─── Announcement categories & types (admin-managed, per sport) ──────────────
+// Categories and their types used to live in a hardcoded CATEGORY_TYPE_MAP in
+// AddAnnouncementTemplatePage.jsx. That map mixed hockey and soccer concepts
+// and could not be extended without a release — and production data had already
+// outgrown it (Lineup carries Goalie/Intro/Outro/Player/Forwards/Defense, while
+// the map allowed only lineup:['General']). These read/write the rows added by
+// 20260916000001_announcement_sport_scope.sql instead.
+
+const categoryRow = (c) => ({
+  _id: c.id,
+  sportId: c.sport_id,
+  name: c.name,
+  label: c.label || c.name,
+  variables: Array.isArray(c.variables) ? c.variables : [],
+  sortOrder: c.sort_order,
+  status: c.status,
+  createdAt: c.created_at,
+});
+
+const typeRow = (t) => ({
+  _id: t.id,
+  sportId: t.sport_id,
+  categoryId: t.category_id,
+  category: t.category,
+  type: t.type,
+  audioUrl: t.audio_url || {},
+  status: t.status,
+  createdAt: t.created_at,
+});
+
+export const listAnnouncementCategories = async (reqData = {}) => {
+  const { sportId } = reqData;
+  if (!sportId) return { status: false, message: 'No active sport selected' };
+  const { data, error } = await supabase
+    .from('announcement_categories')
+    .select('*')
+    .eq('sport_id', sportId)
+    .order('sort_order')
+    .order('name');
+  if (error) return { status: false, message: error.message };
+  return { status: true, message: 'Listed successfully', result: (data ?? []).map(categoryRow) };
+};
+
+export const addAnnouncementCategory = async (data = {}) => {
+  const { sportId, name, label, variables } = data;
+  if (!sportId) return { status: false, message: 'No active sport selected' };
+  if (!name) return { status: false, message: 'Category name is required' };
+  const { error } = await supabase.from('announcement_categories').insert({
+    sport_id: sportId,
+    // stored lowercase to match announcement_templates.category, which mobile
+    // still groups by (fetchAnnouncementChunks)
+    name: String(name).trim().toLowerCase(),
+    label: (label || name).trim(),
+    variables: variables ?? [],
+  });
+  if (error) {
+    // 23505 = the (sport_id, lower(name)) unique index
+    if (error.code === '23505') return { status: false, message: 'That category already exists for this sport' };
+    return { status: false, message: error.message };
+  }
+  return { status: true, message: 'Category added successfully' };
+};
+
+export const updateAnnouncementCategory = async (data = {}) => {
+  const id = data._id || data.id;
+  if (!id) return { status: false, message: 'Category id missing' };
+  const update = {};
+  if (data.label !== undefined) update.label = String(data.label).trim();
+  if (data.variables !== undefined) update.variables = data.variables ?? [];
+  if (data.status !== undefined) update.status = data.status;
+  // `name` is deliberately NOT editable here: announcement_templates.category
+  // and announcement_types.category still carry it as text, and mobile groups
+  // on those values. Renaming would need a transaction across three tables;
+  // the display `label` covers the actual need.
+  if (!Object.keys(update).length) return { status: true, message: 'Nothing to update' };
+  const { error } = await supabase.from('announcement_categories').update(update).eq('id', id);
+  if (error) return { status: false, message: error.message };
+  return { status: true, message: 'Category updated successfully' };
+};
+
+// Blocks rather than cascades. The FK is ON DELETE CASCADE, which is right for
+// a category created by mistake and wrong for one with a phrase library behind
+// it — so count first and refuse if anything would be taken with it.
+export const deleteAnnouncementCategory = async (data = {}) => {
+  const id = data._id || data.id;
+  if (!id) return { status: false, message: 'Category id missing' };
+
+  const [{ count: phraseCount }, { count: typeCount }] = await Promise.all([
+    supabase.from('announcement_templates').select('id', { count: 'exact', head: true }).eq('category_id', id),
+    supabase.from('announcement_types').select('id', { count: 'exact', head: true }).eq('category_id', id),
+  ]);
+  if (phraseCount > 0) {
+    return {
+      status: false,
+      message: `This category has ${phraseCount} phrase${phraseCount === 1 ? '' : 's'}. Delete or move them first.`,
+    };
+  }
+  if (typeCount > 0) {
+    return {
+      status: false,
+      message: `This category has ${typeCount} type${typeCount === 1 ? '' : 's'}. Delete them first.`,
+    };
+  }
+
+  const { error } = await supabase.from('announcement_categories').delete().eq('id', id);
+  if (error) return { status: false, message: error.message };
+  return { status: true, message: 'Category deleted successfully' };
+};
+
+export const listAnnouncementTypes = async (reqData = {}) => {
+  const { sportId, categoryId } = reqData;
+  if (!sportId) return { status: false, message: 'No active sport selected' };
+  let q = supabase.from('announcement_types').select('*').eq('sport_id', sportId);
+  if (categoryId) q = q.eq('category_id', categoryId);
+  const { data, error } = await q.order('type');
+  if (error) return { status: false, message: error.message };
+
+  // phrase counts per type, so the UI can show usage and block deletes
+  const rows = (data ?? []).map(typeRow);
+  if (rows.length) {
+    const { data: phrases } = await supabase
+      .from('announcement_templates')
+      .select('type_id')
+      .eq('sport_id', sportId)
+      .not('type_id', 'is', null);
+    const counts = {};
+    for (const p of phrases ?? []) counts[p.type_id] = (counts[p.type_id] ?? 0) + 1;
+    for (const r of rows) r.phraseCount = counts[r._id] ?? 0;
+  }
+  return { status: true, message: 'Listed successfully', result: rows };
+};
+
+export const addAnnouncementType = async (data = {}) => {
+  const { sportId, categoryId, type } = data;
+  if (!sportId || !categoryId) return { status: false, message: 'Sport and category are required' };
+  if (!type) return { status: false, message: 'Type name is required' };
+
+  const { data: cat } = await supabase
+    .from('announcement_categories').select('name').eq('id', categoryId).maybeSingle();
+  if (!cat) return { status: false, message: 'Category not found' };
+
+  const { error } = await supabase.from('announcement_types').insert({
+    sport_id: sportId,
+    category_id: categoryId,
+    // the text column stays in step with the FK — announcement-tts and mobile
+    // both still read (category, type) as text
+    category: cat.name,
+    type: String(type).trim(),
+    audio_url: {},
+  });
+  if (error) {
+    if (error.code === '23505') return { status: false, message: 'That type already exists in this category' };
+    return { status: false, message: error.message };
+  }
+  return { status: true, message: 'Type added successfully' };
+};
+
+export const deleteAnnouncementType = async (data = {}) => {
+  const id = data._id || data.id;
+  if (!id) return { status: false, message: 'Type id missing' };
+  const { count } = await supabase
+    .from('announcement_templates').select('id', { count: 'exact', head: true }).eq('type_id', id);
+  if (count > 0) {
+    return {
+      status: false,
+      message: `This type has ${count} phrase${count === 1 ? '' : 's'}. Delete or move them first.`,
+    };
+  }
+  const { error } = await supabase.from('announcement_types').delete().eq('id', id);
+  if (error) return { status: false, message: error.message };
+  return { status: true, message: 'Type deleted successfully' };
 };

@@ -37,7 +37,8 @@ async function uploadSportImage(image) {
 
 const sportRow = (s) =>
   s && {
-    _id: s.id, name: s.name, image: s.image, description: s.description,
+    _id: s.id, name: s.name, code: s.code ?? null,
+    image: s.image, description: s.description,
     rulesAndRegulations: s.rules_and_regulations, activate: s.activate,
     createdAt: s.created_at, updatedAt: s.updated_at,
   };
@@ -58,16 +59,31 @@ const teamRow = (t) =>
 const idOf = (d) => d?.id || d?._id || d?.teamId || d?.sportId || d?.sportsId || d?.memberId;
 
 // ─── Sports ────────────────────────────────────────────────────────────────
+// `sports.code` is the STABLE identifier the mobile app resolves scoring rules
+// with (SportConfig.id) — `name` is a display label an admin may rename freely.
+// Derived from the name the same way the 20260917000003 backfill derived it, so
+// a sport added here matches a sport seeded there. The column carries a unique
+// index: without this, a second sport added from the admin panel would insert a
+// second NULL code and fail on the constraint.
+const sportCodeFromName = (name) =>
+  String(name ?? "").trim().toLowerCase().replace(/\s+/g, "_");
+
 export const AddSports = async (data) => {
   const { fields, image } = parseAdminPayload(data);
   const imageUrl = await uploadSportImage(image);
+  const code = sportCodeFromName(fields.code ?? fields.name);
+  if (!code) return { status: false, message: "Sport name is required" };
   const { error } = await supabase.from("sports").insert({
     name: fields.name ?? "",
+    code,
     image: imageUrl ?? fields.image ?? "",
     description: fields.description ?? "",
     rules_and_regulations: fields.rulesAndRegulations ?? fields.rules_and_regulations ?? "",
     activate: fields.activate ?? true,
   });
+  if (error?.code === "23505") {
+    return { status: false, message: `A sport with code "${code}" already exists` };
+  }
   if (error) return { status: false, message: error.message };
   return { status: true, message: "Sport added successfully" };
 };
@@ -88,6 +104,11 @@ export const EditSports = async (data) => {
   const id = idOf(fields);
   if (!id) return { status: false, message: "Sport id missing" };
   const update = { updated_at: new Date().toISOString() };
+  // `code` is deliberately NOT updatable. It is the identifier mobile resolves
+  // scoring rules with, so rewriting it on a rename would change how existing
+  // games of that sport are scored — 15-minute ringette periods reverting to
+  // hockey's 20, silently. Renaming the display label is safe precisely because
+  // this line does not exist. Do not add it.
   if (fields.name !== undefined) update.name = fields.name;
   if (fields.description !== undefined) update.description = fields.description;
   if (fields.rulesAndRegulations !== undefined) update.rules_and_regulations = fields.rulesAndRegulations;
@@ -120,7 +141,13 @@ const teamSelect = "*, sports(*), organizations(id,name)";
 export const listAllTeam = async (reqData = {}) => {
   const page = Number(reqData.page) || 1;
   const limit = Number(reqData.limit) || 10;
-  let q = supabase.from("teams").select(teamSelect, { count: "exact" }).order("created_at", { ascending: false });
+  const { sportId } = reqData;
+  // Refuse rather than list every sport's teams — an unscoped query here is the
+  // cross-contamination this work exists to close.
+  if (!sportId) return { status: false, message: "No active sport selected", count: 0, result: [] };
+  let q = supabase.from("teams").select(teamSelect, { count: "exact" })
+    .eq("sport_id", sportId)
+    .order("created_at", { ascending: false });
   if (reqData.search) q = q.ilike("name", `%${reqData.search}%`);
   q = q.range((page - 1) * limit, page * limit - 1);
   const { data, count, error } = await q;
@@ -128,8 +155,13 @@ export const listAllTeam = async (reqData = {}) => {
   return { status: true, count: count ?? 0, message: "Listed successfully", result: (data ?? []).map(teamRow) };
 };
 
-export const listAllTeams = async () => {
-  const { data, error } = await supabase.from("teams").select(teamSelect).order("name");
+export const listAllTeams = async (reqData = {}) => {
+  const { sportId } = reqData;
+  let tq = supabase.from("teams").select(teamSelect);
+  // Used to populate team pickers; scope so an admin cannot attach a member or
+  // event to a team from another sport.
+  if (sportId) tq = tq.eq("sport_id", sportId);
+  const { data, error } = await tq.order("name");
   if (error) return { status: false, message: error.message };
   return { status: true, count: data?.length ?? 0, message: "Listed successfully", result: (data ?? []).map(teamRow) };
 };
@@ -167,6 +199,15 @@ export const DeleteTeam = async (data) => {
 // member_image/ai_voice are storage PATHS (member-photos / voice-audio buckets,
 // both currently public buckets — see storage.buckets.public — so a plain
 // getPublicUrl resolves them; Wave 10 audit fix, these were dropped entirely).
+// A stored asset is either a bucket path or an already-resolved public URL —
+// both shapes exist because different writers produced them. Resolve a path,
+// pass a URL through untouched.
+const storageUrl = (bucket, value) => {
+  if (!value || value === "undefined") return "";
+  if (/^https?:\/\//i.test(value)) return value;
+  return supabase.storage.from(bucket).getPublicUrl(value).data.publicUrl;
+};
+
 const memberRow = (m) =>
   m && {
     _id: m.id, teamId: m.team_id, teamName: m.teams?.name ?? "",
@@ -175,8 +216,15 @@ const memberRow = (m) =>
     isMinor: m.is_minor, guardianName: m.guardian_name, guardianEmail: m.guardian_email,
     relationship: m.relationship, address: m.address, city: m.city, country: m.country,
     province: m.province, postalcode: m.postalcode, colorCode: m.color_code, type: m.type,
-    memberImage: m.member_image ? supabase.storage.from("member-photos").getPublicUrl(m.member_image).data.publicUrl : "",
-    aiVoice: m.ai_voice ? supabase.storage.from("voice-audio").getPublicUrl(m.ai_voice).data.publicUrl : "",
+    // getPublicUrl() only if the column holds a storage PATH. member-tts writes
+    // members.ai_voice as a complete public URL (see the edge function's
+    // `update({ ai_voice: url })`), and calling getPublicUrl on one of those
+    // prepends the bucket prefix to a finished URL — which is how the Preview
+    // modal ended up with
+    //   .../voice-audio/https://.../voice-audio/member/...
+    // and an <audio> element that could never load. Same guard as lib/assetUrl.
+    memberImage: storageUrl("member-photos", m.member_image),
+    aiVoice: storageUrl("voice-audio", m.ai_voice),
     createdAt: m.created_at, updatedAt: m.updated_at,
   };
 
@@ -186,8 +234,14 @@ export const listAllMember = async (reqData = {}) => {
   // Explicit FK hint: members also relates to teams via teams.dj_id, so the
   // unqualified `teams(name)` embed is ambiguous (PGRST201) — this is always
   // "the team this member is on" (members.team_id), not "teams this member DJs".
+  const { sportId } = reqData;
+  if (!sportId) return { status: false, message: "No active sport selected", count: 0, result: [] };
   let q = supabase.from("members").select("*, teams!members_team_id_fkey(name)", { count: "exact" })
-    .eq("type", "player").order("created_at", { ascending: false });
+    .eq("type", "player")
+    // members.sport_id is kept in step with the team by trg_default_member_sport
+    // (20260806000005), so this is equivalent to filtering on the team's sport.
+    .eq("sport_id", sportId)
+    .order("created_at", { ascending: false });
   if (reqData.teamId) q = q.eq("team_id", reqData.teamId);
   const search = reqData.search || reqData.firstname;
   if (search) q = q.ilike("firstname", `%${search}%`);

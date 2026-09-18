@@ -21,6 +21,7 @@ const nav = {
     ],
     "/email-template": [
         "/add-category",
+        "/email-template/add",
         "/email-template/edit",
     ],
     "/admin-and-access": [

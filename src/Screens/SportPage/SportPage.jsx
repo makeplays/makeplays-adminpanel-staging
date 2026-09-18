@@ -64,6 +64,20 @@ const SportPage = () => {
       ),
     },
     {
+      // The identifier the mobile app resolves scoring rules with. Shown
+      // read-only so it is obvious that renaming a sport does not change how it
+      // is scored, and so a sport whose code never got set (blank here) is
+      // visible rather than silently falling back to hockey's rules.
+      key: "code",
+      text: "Code",
+      sortable: true,
+      cell: (record) => (
+        <p className="text-center">
+          <code>{record?.code ? record.code : "--"}</code>
+        </p>
+      ),
+    },
+    {
       key: "description",
       text: "Description",
       sortable: true,
