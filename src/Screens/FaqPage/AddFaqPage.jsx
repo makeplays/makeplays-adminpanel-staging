@@ -10,6 +10,8 @@ import crypto from '../../config/crypto';
 import { AddFaq } from '../../api/adminApi'
 import { Customdecryptdata, Customencryptdata } from '../../lib/CustomData';
 import { CustomToastHandler } from "../../hooks/useCustomToast";
+import AppliesToPills from "../../Components/AppliesToPills";
+import { useSport } from "../../context/sportContext";
 
 var secretKey = crypto.cryptoSecretKey
 
@@ -23,7 +25,11 @@ const initialFormValue = {
 export const AddFaqPage = ({ record }) => {
     const [formvalue, setFormvalue] = useState(initialFormValue);
     const [errors, setErrors] = useState({});
+    // Defaults to the active sport — the safer accident: a stray sport-scoped
+    // FAQ affects one sport, a stray shared one affects every sport.
+    const [allSports, setAllSports] = useState(false);
     const history = useHistory();
+    const { sportId } = useSport();
 
     const handlechange = (e) => {
         setErrors({})
@@ -87,7 +93,11 @@ export const AddFaqPage = ({ record }) => {
 
             const payload = {
                 question: formvalue.question,
-                answer: formvalue.answer
+                answer: formvalue.answer,
+                // null sport_id = All Sports; allSports is sent explicitly so a
+                // missing sportId is never mistaken for a deliberate shared row.
+                allSports,
+                sportId,
             }
             const encryptedData = Customencryptdata(payload, secretKey)
             passData.append("token", encryptedData)
@@ -128,6 +138,12 @@ export const AddFaqPage = ({ record }) => {
                     </div>
 
                     <div className="mt-4">
+
+                        <AppliesToPills
+                            allSports={allSports}
+                            onChange={setAllSports}
+                            allSportsHint={"Shown to every sport, alongside each sport's own FAQs."}
+                        />
 
                         <div className="rp_singleinput_holder mb-3">
                             <p className="rp_label mb-2">Question</p>

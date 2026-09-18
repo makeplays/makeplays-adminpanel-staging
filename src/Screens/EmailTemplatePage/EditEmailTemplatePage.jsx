@@ -9,6 +9,7 @@ import ReactSummernote from "react-summernote";
 import "react-summernote/dist/react-summernote.css";
 import $ from "jquery";
 import { Col, Row } from "react-bootstrap";
+import AppliesToPills from "../../Components/AppliesToPills";
 window.$ = window.jQuery = $;
 
 const initialFormValue = {
@@ -28,7 +29,9 @@ export const EditEmailTemplatePage = ({ record }) => {
       setFormvalue({
         _id: emailData?._id,
         subject: emailData.subject,
-        content: emailData.content
+        content: emailData.content,
+        // read-only here; carried so the pills can show the stored scope
+        sportId: emailData.sportId ?? null,
       });
     }
   }, [emailData]);
@@ -97,6 +100,16 @@ export const EditEmailTemplatePage = ({ record }) => {
           <Row>
             <Col xl={7}>
               <div className="mt-4">
+                {/* Read-only: flipping a shared template to sport-specific would
+                    silently remove it from every other sport, and the reverse
+                    would overwrite what each sport falls back to. Scope is set
+                    once at creation; to move one, delete and re-create. */}
+                <AppliesToPills
+                  allSports={!formvalue?.sportId}
+                  onChange={() => {}}
+                  disabled
+                />
+
                 <div className="rp_singleinput_holder mb-3">
                   <p className="rp_label mb-2">Subject</p>
                   <div className="rp_input_holder rounded-2 py-2 px-3 d-flex justify-content-start align-items-center gap-2">

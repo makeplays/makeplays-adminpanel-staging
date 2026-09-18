@@ -12,8 +12,10 @@ import key from "../../config/index";
 import { assetUrl } from "../../lib/assetUrl";
 import { CustomToastHandler } from "../../hooks/useCustomToast";
 import { useSelector } from "react-redux";
+import { useSport } from "../../context/sportContext";
 
 const AllTeamPage = () => {
+  const { sportId } = useSport();
 
   const [teamList, setTeamList] = useState();
   const [pageNumer, setPageNumer] = useState(1);
@@ -38,14 +40,9 @@ const AllTeamPage = () => {
         return <p className="">{index + 1}</p>
       },
     },
-    {
-      key: "sport",
-      text: "Sport",
-      sortable: false,
-      cell: (record) => {
-        return <p className="">{record?.sportId?.name ? record?.sportId?.name : "--"}</p>
-      },
-    },
+    // The Sport column is gone: every row on this page already belongs to the
+    // sport chosen in the sidebar, so it repeated the same value 121 times and
+    // cost a column's width to say nothing.
     {
       key: "teamName",
       text: "Team Name",
@@ -55,35 +52,38 @@ const AllTeamPage = () => {
       },
     },
     {
+      // "Division" is what the mobile Create a New Team form calls this field;
+      // it is the same age_criteria column underneath. The admin was the only
+      // place still calling it Age Criteria.
       key: "ageCriteria",
-      text: "Age Criteria",
+      text: "Division",
       sortable: true,
       cell: (record) => {
         return <p className="">{record?.ageCriteria ? record?.ageCriteria : "--"}</p>
       }
     },
     {
+      // Mobile captures one free-text location through the location picker and
+      // never writes country or state — those two columns exist on the table
+      // but are empty for all 121 production teams, so the admin showed two
+      // columns of "--" and omitted the value that is actually set on 94 of
+      // them. Matching the mobile form: one Location.
+      key: "location",
+      text: "Location",
+      sortable: true,
+      cell: (record) => {
+        return <p className="">{record?.location ? record?.location : "--"}</p>
+      }
+    },
+    {
+      // Mobile's placeholder reads "League, Club or Association Name"; the
+      // stored column is league_or_club_name. "League / Club" keeps the header
+      // honest without spilling the column.
       key: "leagueOrClubName",
-      text: "League Name",
+      text: "League / Club",
       sortable: true,
       cell: (record) => {
         return <p className="">{record?.leagueOrClubName ? record?.leagueOrClubName : "--"}</p>
-      }
-    },
-    {
-      key: "country",
-      text: "Country",
-      sortable: true,
-      cell: (record) => {
-        return <p className="">{record?.country ? record?.country : "--"}</p>
-      }
-    },
-    {
-      key: "city",
-      text: "City",
-      sortable: true,
-      cell: (record) => {
-        return <p className="">{record?.city ? record?.city : "--"}</p>
       }
     },
     {
@@ -93,16 +93,24 @@ const AllTeamPage = () => {
       align: "center",
       sortable: false,
       cell: (record) => {
-        if (record?.teamLogo != undefined) {
+        // Only 4 of 121 teams have a logo, so the empty case is the common one
+        // and it has to sit at the same height as the image card — otherwise
+        // rows step up and down the table. Same placeholder the FAQ media
+        // columns use. The old `!= undefined` guard also rendered nothing at
+        // all when teamLogo was undefined, leaving a blank cell rather than a
+        // placeholder.
+        if (record?.teamLogo) {
           return (
             <div className="tableImgViewCard">
-              {record.teamLogo ?
-                <img
-                  src={assetUrl(record.teamLogo, `${key.IMAGE_URL}/Team/`)}
-                /> : <p>No Image</p>}{" "}
+              <img src={assetUrl(record.teamLogo, `${key.IMAGE_URL}/Team/`)} alt="team logo" />
             </div>
           );
         }
+        return (
+          <div className="tableImgViewCard table_media_placeholder">
+            <span>No Image</span>
+          </div>
+        );
       },
     }
   ]
@@ -151,12 +159,14 @@ const AllTeamPage = () => {
   }, [user]);
 
   useEffect(() => {
+    if (!sportId) return;
     getAllTeam();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sportId]);
 
   const getAllTeam = async (reqData) => {
     try {
-      let { status, loading, error, message, result, count } = await listAllTeam(reqData);
+      let { status, loading, error, message, result, count } = await listAllTeam({ ...reqData, sportId });
       if (status) {
         setTeamList(result);
         setCount(count)
@@ -248,11 +258,19 @@ const AllTeamPage = () => {
     });
   };
 
+  // Server-side here, unlike FAQ: listAllTeam really does honour page, limit
+  // and search, so dynamic={true} on the table below is correct and the length
+  // menu drives a real query rather than re-slicing a page that is already
+  // ten rows long.
+  //
+  // filename and no_data_text were still "Emailtemplates" / "No Email
+  // Templates found!" from whichever page this was copied from — an empty
+  // Teams list told the admin there were no email templates.
   const config = {
     page_size: 10,
-    length_menu: [10, 20, 50],
-    filename: "Emailtemplates",
-    no_data_text: "No Email Templates found!",
+    length_menu: [10, 50, 100, 200],
+    filename: "Teams",
+    no_data_text: "No teams found!",
     language: {
       length_menu: "Show _MENU_ result per page",
       filter: "Filter by Team Name...",
@@ -264,10 +282,10 @@ const AllTeamPage = () => {
         last: "Last",
       },
     },
-    show_length_menu: false,
+    show_length_menu: true,
     show_filter: true,
     show_pagination: true,
-    show_info: false,
+    show_info: true,
   };
 
   const extraButtons = [

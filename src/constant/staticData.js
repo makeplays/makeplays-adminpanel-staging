@@ -75,6 +75,7 @@ export const navLinks = [
     {
         path: "/dashboard",
         name: "Dashboard",
+        scope: "global",
         exact: true,
         sidemenu: true,
         type: "private",
@@ -83,6 +84,7 @@ export const navLinks = [
     {
         path: "/broadcast",
         name: "Broadcast",
+        scope: "global",
         exact: true,
         sidemenu: true,
         type: "private",
@@ -91,6 +93,7 @@ export const navLinks = [
     {
         path: "/users",
         name: "Users",
+        scope: "global",
         exact: true,
         sidemenu: true,
         type: "private",
@@ -99,6 +102,7 @@ export const navLinks = [
     {
         path: "/teams",
         name: "Teams",
+        scope: "sport",
         exact: true,
         sidemenu: true,
         type: "private",
@@ -107,6 +111,7 @@ export const navLinks = [
     {
         path: "/members",
         name: "Members",
+        scope: "sport",
         exact: true,
         sidemenu: true,
         type: "private",
@@ -115,6 +120,7 @@ export const navLinks = [
     {
         path: "/Voice",
         name: "Voice",
+        scope: "global",
         exact: true,
         sidemenu: true,
         type: "private",
@@ -123,6 +129,7 @@ export const navLinks = [
     {
         path: "/events",
         name: "Events",
+        scope: "sport",
         exact: true,
         sidemenu: true,
         type: "private",
@@ -131,6 +138,7 @@ export const navLinks = [
     {
         path: "/sports",
         name: "Sports",
+        scope: "global",
         exact: true,
         sidemenu: true,
         type: "private",
@@ -147,6 +155,7 @@ export const navLinks = [
     {
         path: "/announcement-template",
         name: "Announcement Templates",
+        scope: "sport",
         exact: true,
         sidemenu: true,
         type: "private",
@@ -155,6 +164,7 @@ export const navLinks = [
     {
         path: "/email-template",
         name: "Email Template",
+        scope: "sport",
         exact: true,
         sidemenu: true,
         type: "private",
@@ -163,6 +173,7 @@ export const navLinks = [
     {
         path: "/admin-and-access",
         name: "Admin and Access",
+        scope: "global",
         exact: true,
         sidemenu: true,
         type: "private",
@@ -179,6 +190,7 @@ export const navLinks = [
     {
         path: "/contactus",
         name: "Contact Us",
+        scope: "global",
         exact: true,
         sidemenu: true,
         type: "private",
@@ -187,6 +199,7 @@ export const navLinks = [
     {
         path: "/cms",
         name: "CMS",
+        scope: "global",
         exact: true,
         sidemenu: true,
         type: "private",
@@ -195,6 +208,7 @@ export const navLinks = [
     {
         path: "/faq",
         name: "FAQ",
+        scope: "sport",
         exact: true,
         sidemenu: true,
         type: "private",
@@ -203,6 +217,7 @@ export const navLinks = [
     {
         path: "/coupons",
         name: "Coupons",
+        scope: "global",
         exact: true,
         sidemenu: true,
         type: "private",

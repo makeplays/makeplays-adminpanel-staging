@@ -16,13 +16,16 @@ import { assetUrl } from "../../lib/assetUrl";
 import { CustomToastHandler } from "../../hooks/useCustomToast";
 import { useSelector } from "react-redux";
 import { FaqPageModels } from "../../Modals/FaqPageModels";
+import { useSport } from "../../context/sportContext";
 
 const FaqPage = () => {
+  const { sportId, sport } = useSport();
   
   const [list, setList] = useState();
-  const [pageNumer, setPageNumer] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [count, setCount] = useState(0);
+  // pageNumer/limit/count all went with the server-side paging that
+  // listAllFaq never implemented — it ignores page, limit and search and
+  // returns every row. The table owns paging, filtering and the record
+  // count itself now, straight from `records`.
   const history = useHistory();
   const [errors, setErrors] = useState({});
   const [fileName, setFileName] = useState();
@@ -50,11 +53,33 @@ const FaqPage = () => {
       ),
     },
     {
+      key: "scope",
+      text: "Applies to",
+      sortable: false,
+      cell: (record) => (
+        <p className="text-center m-0">
+          <span className={`scope_badge ${record?.sportId ? "is_sport" : ""}`}>
+            {record?.sportId ? record?.sportName ?? "This sport" : "All Sports"}
+          </span>
+        </p>
+      ),
+    },
+    {
+      // Clamped to two lines. Answers are multi-step instructions — several
+      // run past 300 characters — and at full length one row stood taller than
+      // the rest of the page, which is why the table read as unpaginated even
+      // where it was not. `title` keeps the whole answer reachable on hover
+      // without a modal, and the edit screen still shows it in full.
       key: "answer",
       text: "Answer",
       sortable: true,
       cell: (record) => (
-        <p className="text-center">{record?.answer ? record.answer : "--"}</p>
+        <p
+          className="text-center table_clamp_2 m-0"
+          title={record?.answer || ""}
+        >
+          {record?.answer ? record.answer : "--"}
+        </p>
       ),
     },
     {
@@ -72,7 +97,14 @@ const FaqPage = () => {
           );
         }
         else {
-          return <span>No Image</span>;
+          // A bare "No Image" string sat at a different height to the 120px
+          // image cards beside it, so rows with and without artwork did not
+          // line up. The placeholder occupies the same box the image would.
+          return (
+            <div className="tableFaqImgViewCard table_media_placeholder">
+              <span>No Image</span>
+            </div>
+          );
         }
       },
     },
@@ -91,7 +123,13 @@ const FaqPage = () => {
           );
         }
         else {
-          return <span>No Video</span>;
+          // Same reasoning as the image column, sized to the 220x130 the
+          // video element uses.
+          return (
+            <div className="tableVideoViewCard table_media_placeholder is_video">
+              <span>No Video</span>
+            </div>
+          );
         }
       },
     }
@@ -145,15 +183,16 @@ const FaqPage = () => {
   }, [user]);
 
   useEffect(() => {
+    if (!sportId) return;
     getAllFaq();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sportId]);
 
   const getAllFaq = async (reqData) => {
     try {
-      let { status, loading, error, message, result, count } = await listAllFaq(reqData);
+      let { status, loading, error, message, result } = await listAllFaq({ ...reqData, sportId });
       if (status) {
         setList(result);
-        setCount(count)
       } else {
         if (error) {
         } else if (message) {
@@ -228,14 +267,23 @@ const FaqPage = () => {
     });
   };
 
+  // Client-side paging, filtering and length menu, matching Email Templates:
+  // listAllFaq returns every row in one call, so the table has the whole set
+  // to work with. The filter box searches every column it is given, which is
+  // what makes the question AND the answer text findable.
+  //
+  // show_length_menu and show_filter were both false, and the filename and
+  // no_data_text were still the ones copied from the Email Template page — so
+  // the FAQ table offered no search, no page-size control and told anyone who
+  // emptied it that no email templates were found.
   const config = {
     page_size: 10,
-    length_menu: [10, 20, 50],
-    filename: "Emailtemplates",
-    no_data_text: "No Email Templates found!",
+    length_menu: [10, 50, 100, 200],
+    filename: "Faqs",
+    no_data_text: "No FAQs found!",
     language: {
       length_menu: "Show _MENU_ result per page",
-      filter: "Filter in records...",
+      filter: "Filter in FAQs...",
       info: "Showing _START_ to _END_ of _TOTAL_ records",
       pagination: {
         first: "First",
@@ -244,10 +292,10 @@ const FaqPage = () => {
         last: "Last",
       },
     },
-    show_length_menu: false,
-    show_filter: false,
+    show_length_menu: true,
+    show_filter: true,
     show_pagination: true,
-    show_info: false,
+    show_info: true,
   };
 
   const extraButtons = [
@@ -301,17 +349,6 @@ const FaqPage = () => {
     }
   };
 
-  const handlePagination = async (index) => {
-    let reqData = {
-      page: index.page_number,
-      limit: index.page_size,
-      search: index.filter_value,
-    };
-    getAllFaq(reqData)
-    setPageNumer(index.page_number);
-    setLimit(index.page_size);
-    setCount(count);
-  };
 
 
   return (
@@ -344,18 +381,24 @@ const FaqPage = () => {
                   </div>
                 </div>
 
+                {/*
+                  Client-side, like Email Templates. `dynamic={true}` hands
+                  paging, sorting and filtering to the server — but
+                  listAllFaq ignores page, limit and search outright: it
+                  selects every faq row for the sport and returns the lot.
+                  So the table was deferring to a server that does not page,
+                  which is why the filter box and length menu had to be
+                  switched off to keep it coherent.
+
+                  With the full set already in `records`, the table can do
+                  all three itself, and the filter searches every column —
+                  question, answer, identifier and scope alike.
+                */}
                 <ReactDatatable
                   config={config}
                   records={list}
                   columns={columns}
                   extraButtons={extraButtons}
-                  dynamic={true}
-                  total_record={count}
-                  onChange={(e) => {
-                    handlePagination(e);
-                  }}
-                  filterRecords={(e) => { }}
-                  filterData={(e) => { }}
                 />
               </div>
             </div>

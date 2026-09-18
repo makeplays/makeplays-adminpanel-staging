@@ -20,8 +20,10 @@ import key from "../../config/index";
 import { assetUrl } from "../../lib/assetUrl";
 import { CustomToastHandler } from "../../hooks/useCustomToast";
 import { useSelector } from "react-redux";
+import { useSport } from "../../context/sportContext";
 
 const MembersPage = () => {
+  const { sportId } = useSport();
   const [pageNumer, setPageNumer] = useState(1);
   const [limit, setLimit] = useState(10);
   const [count, setCount] = useState(0);
@@ -47,14 +49,9 @@ const MembersPage = () => {
         return <p className="">{index + 1}</p>
       },
     },
-    {
-      key: "teamname",
-      text: "Team Name",
-      sortable: true,
-      cell: (record, index) => (
-        <p className="text-center">{record?.teamId?.teamName ? record?.teamId?.teamName : "--"}</p>
-      ),
-    },
+    // Team Name is gone: the Teams dropdown above the table already picks the
+    // team, so the column repeated that choice on every row — and read "--"
+    // for every member while no team was selected, which is the default view.
     {
       key: "firstname",
       text: "Firstname",
@@ -88,72 +85,38 @@ const MembersPage = () => {
       ),
     },
     {
-      key: "phonenumber",
-      text: "P.No",
-      sortable: true,
-      cell: (record, index) => (
-        <p className="text-center">{record?.phonenumber ? record.phonenumber : "--"}</p>
-      ),
-    },
-    {
+      // Jersey Number on the mobile form; `number` in the row.
       key: "number",
-      text: "Number",
+      text: "Jersey No",
       sortable: true,
       cell: (record, index) => (
         <p className="text-center">{record?.number ? record.number : "--"}</p>
       ),
     },
     {
-      key: "address",
-      text: "Address",
+      // "Are you a major?" on the Add Member form — a required Yes/No that
+      // decides whether the member's own email or a guardian's is validated,
+      // and the branch every downstream guardian rule keys off. Stored as the
+      // is_minor boolean; shown here the way the form asks it.
+      key: "isMinor",
+      text: "Major / Minor",
       sortable: true,
-      cell: (record, index) => (
-        <p className="text-center">{record?.address ? record.address : "--"}</p>
+      cell: (record) => (
+        <p className="text-center m-0">
+          <span className={`scope_badge ${record?.isMinor ? "is_sport" : ""}`}>
+            {record?.isMinor ? "Minor" : "Major"}
+          </span>
+        </p>
       ),
     },
-    {
-      key: "city",
-      text: "City",
-      sortable: true,
-      cell: (record, index) => (
-        <p className="text-center">{record?.city ? record.city : "--"}</p>
-      ),
-    },
-    {
-      key: "country",
-      text: "Country",
-      sortable: true,
-      cell: (record, index) => (
-        <p className="text-center">{record?.country ? record.country : "--"}</p>
-      ),
-    },
-    {
-      key: "province",
-      text: "Province",
-      sortable: true,
-      cell: (record, index) => (
-        <p className="text-center">{record?.province ? record.province : "--"}</p>
-      ),
-    },
-    {
-      key: "postalcode",
-      text: "Postal Code",
-      sortable: true,
-      cell: (record, index) => (
-        <p className="text-center">{record?.postalcode ? record.postalcode : "--"}</p>
-      ),
-    },
-    {
-      key: "private",
-      text: "Private",
-      sortable: true,
-      cell: (record) => {
-        if (Array.isArray(record.private) && record.private.length > 0) {
-          return record.private.join(", ");
-        }
-        return "-"; // fallback if empty or not an array
-      },
-    },
+    // Phone, address, city, country, province, postal code and private were all
+    // dropped. None of them is on the Add Member form — it captures first name,
+    // last name, jersey number, position, the major/minor answer, and optional
+    // email and phone — so every one of those columns read "--" for members
+    // added through the app, which is all of them. Phone is the one exception:
+    // the form does collect it, but it is contact detail, and the contact
+    // information modal already presents it properly alongside the guardian
+    // fields.
     {
       key: "Image",
       text: "Image",
@@ -170,9 +133,15 @@ const MembersPage = () => {
               />
             </div>
           );
-        } else {
-          return <span>--</span>;
         }
+        // A bare "--" sat at a different height to the 80px image card beside
+        // it, so rows with and without a photo did not line up. Same
+        // placeholder the Teams and FAQ media columns use.
+        return (
+          <div className="tableImgViewCard table_media_placeholder">
+            <span>No Image</span>
+          </div>
+        );
       },
     },
     {
@@ -243,13 +212,15 @@ const MembersPage = () => {
   }, [user]);
 
   useEffect(() => {
+    if (!sportId) return;
     getAllMember();
     listTeam()
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sportId]);
 
   const listTeam = async () => {
     try {
-      let { status, loading, result } = await listAllTeams();
+      let { status, loading, result } = await listAllTeams({ sportId });
       if (status) {
         setTeams(result || []);
       }
@@ -260,7 +231,7 @@ const MembersPage = () => {
 
   const getAllMember = async (reqData) => {
     try {
-      let { status, loading, error, message, result, count } = await listAllMember(reqData);
+      let { status, loading, error, message, result, count } = await listAllMember({ ...reqData, sportId });
       if (status) {
         setMemberList(result);
         setCount(count)
@@ -360,11 +331,15 @@ const MembersPage = () => {
     });
   };
 
+  // Server-side, like Teams: listAllMember honours page, limit and search, so
+  // dynamic={true} on the table below is right and the length menu drives a
+  // real query. filename and no_data_text were still the Email Template
+  // page's — an empty Members list said there were no email templates.
   const config = {
     page_size: 10,
-    length_menu: [10, 20, 50],
-    filename: "Emailtemplates",
-    no_data_text: "No Email Templates found!",
+    length_menu: [10, 50, 100, 200],
+    filename: "Members",
+    no_data_text: "No members found!",
     language: {
       length_menu: "Show _MENU_ result per page",
       filter: "Filter by Firstname...",
@@ -376,10 +351,10 @@ const MembersPage = () => {
         last: "Last",
       },
     },
-    show_length_menu: false,
+    show_length_menu: true,
     show_filter: true,
     show_pagination: true,
-    show_info: false,
+    show_info: true,
   };
 
   const extraButtons = [
@@ -429,7 +404,10 @@ const MembersPage = () => {
       if (status) {
         CustomToastHandler({ msg: message })
         setErrors({});
-        getAllMember();
+        // Same as Events: a bare call drops the selected team, so deleting a
+        // member reset the table to every team while the dropdown still
+        // showed the one that was picked.
+        getAllMember({ teamId: selectedTeam });
       } else {
         if (error) {
           setErrors(error);
@@ -476,10 +454,13 @@ const MembersPage = () => {
                     value={selectedTeam}
                     onChange={(e) => handleTeamChange(e.target.value)}
                   >
-                    <option value="" disabled hidden>
-                      Select Team
-                    </option>
-                 
+                    {/*
+                      Same fix as the Events page: `disabled hidden` made the
+                      empty value a placeholder you could leave but never
+                      return to, so picking a team locked the table to it until
+                      a page reload. A real option, and the default.
+                    */}
+                    <option value="">All Teams</option>
 
                     {teams.map((team) => (
                       <option key={team?._id} value={team?._id}>

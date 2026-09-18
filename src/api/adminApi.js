@@ -98,8 +98,12 @@ export const getUser = async (reqData) => {
   }
 };
 
-export const getEmailTemplate = async () => {
-  if (USE_SUPABASE.admin) return sbCommon.getEmailTemplate();
+export const getEmailTemplate = async (reqData) => {
+  // reqData carries the active sportId — dropping it here made the Supabase
+  // query unscoped, so every sport's templates came back regardless of the
+  // switcher (the legacy axios path below takes no params, which is why the
+  // signature was empty).
+  if (USE_SUPABASE.admin) return sbCommon.getEmailTemplate(reqData);
   try {
     const respData = await axios({
       url: `/admin/fetch_emailTemplate`,
@@ -941,3 +945,19 @@ export const UploadImage = async (data) => {
   }
 };
 
+
+// ─── Announcement categories & types ────────────────────────────────────────
+// Supabase-only: these tables were added by the multi-sport migration and have
+// no legacy backend endpoint, so there is no USE_SUPABASE fallback branch.
+export const getAnnouncementCategories = (reqData) => sbEvent.listAnnouncementCategories(reqData);
+export const addAnnouncementCategory = (data) => sbEvent.addAnnouncementCategory(data);
+export const updateAnnouncementCategory = (data) => sbEvent.updateAnnouncementCategory(data);
+export const deleteAnnouncementCategory = (data) => sbEvent.deleteAnnouncementCategory(data);
+
+export const getAnnouncementTypes = (reqData) => sbEvent.listAnnouncementTypes(reqData);
+export const addAnnouncementType = (data) => sbEvent.addAnnouncementType(data);
+export const deleteAnnouncementType = (data) => sbEvent.deleteAnnouncementType(data);
+
+// Supabase-only: creating email templates is new with the multi-sport work and
+// has no legacy backend endpoint, so there is no USE_SUPABASE fallback branch.
+export const AddTemplate = (data) => sbCommon.AddTemplate(data);

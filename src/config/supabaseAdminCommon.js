@@ -43,12 +43,19 @@ const fail = (err) => ({ status: false, message: err?.message || "Something went
 // ─── FAQ ─────────────────────────────────────────────────────────
 const faqRow = (f) => f && ({
   _id: f.id, question: f.question, answer: f.answer, image: f.image, video: f.video,
+  // null = All Sports; the UI badges on this
+  sportId: f.sport_id ?? null,
+  sportName: f.sports?.name ?? null,
   createdAt: f.created_at, updatedAt: f.updated_at,
 });
 
-export const listAllFaq = async () => {
-  const { data, error, count } = await supabase
-    .from("faqs").select("*", { count: "exact" }).order("created_at", { ascending: false });
+export const listAllFaq = async (reqData = {}) => {
+  const { sportId } = reqData;
+  // A LIST, not a lookup: the admin sees this sport's FAQs PLUS the shared ones
+  // (sport_id null = All Sports), never another sport's.
+  let q = supabase.from("faqs").select("*, sports(name)", { count: "exact" });
+  if (sportId) q = q.or(`sport_id.eq.${sportId},sport_id.is.null`);
+  const { data, error, count } = await q.order("created_at", { ascending: false });
   if (error) return fail(error);
   return { status: true, message: "Faq listed successfully", result: (data ?? []).map(faqRow), count: count ?? 0 };
 };
@@ -59,6 +66,9 @@ export const AddFaq = async (data) => {
   const { error } = await supabase.from("faqs").insert({
     question: fields.question ?? "", answer: fields.answer ?? "",
     image: imageUrl ?? "", video: videoUrl ?? "",
+    // "All Sports" is stored as null. The form sends allSports explicitly so a
+    // missing sportId can never be mistaken for a deliberate shared row.
+    sport_id: fields.allSports ? null : fields.sportId ?? null,
   });
   if (error) return fail(error);
   return { status: true, message: "Faq added successfully" };
@@ -70,6 +80,15 @@ export const EditFaq = async (data) => {
     question: fields.question ?? "", answer: fields.answer ?? "",
     updated_at: new Date().toISOString(),
   };
+  // Scope IS editable here, unlike email templates. An FAQ is a standalone list
+  // entry: moving one between All Sports and a single sport only changes who
+  // sees that row. Nothing resolves against it and nothing falls back to it, so
+  // there is no equivalent of an email template's 404.
+  if (fields.allSports !== undefined) {
+    update.sport_id = fields.allSports === true || fields.allSports === "true"
+      ? null
+      : fields.sportId ?? null;
+  }
   const [imageUrl, videoUrl] = await Promise.all([uploadAsset(image, "faq"), uploadAsset(video, "faq")]);
   if (imageUrl) update.image = imageUrl;
   if (videoUrl) update.video = videoUrl;
@@ -151,14 +170,69 @@ export const ResendBroadCastNotify = async (data) => {
 };
 
 // ─── Email templates ─────────────────────────────────────────────
-export const getEmailTemplate = async () => {
-  const { data, error } = await supabase.from("email_templates").select("*").order("identifier");
+export const getEmailTemplate = async (reqData = {}) => {
+  const { sportId } = reqData;
+  // Same shape as FAQ: this sport's overrides plus the shared rows every sport
+  // falls back to. send-email picks the winner at send time.
+  // Embed the sport so the row can be labelled with ITS OWN sport rather than
+  // whichever one happens to be active — otherwise a row belonging to another
+  // sport would be mislabelled if it ever appeared in this list.
+  let q = supabase.from("email_templates").select("*, sports(name)");
+  if (sportId) q = q.or(`sport_id.eq.${sportId},sport_id.is.null`);
+  const { data, error } = await q.order("identifier");
   if (error) return fail(error);
   const result = (data ?? []).map((t) => ({
     _id: t.id, identifier: t.identifier, subject: t.subject, content: t.content,
+    sportId: t.sport_id ?? null,
+    sportName: t.sports?.name ?? null,
     createdAt: t.created_at, updatedAt: t.updated_at,
   }));
   return { status: true, message: "Email templates listed successfully", result };
+};
+
+export const AddTemplate = async (data) => {
+  const { fields } = parsePayload(data);
+  const identifier = String(fields.identifier ?? "").trim();
+  if (!identifier) return { status: false, message: "Identifier is required" };
+  // Developers reference templates by this string from code, so keep it to a
+  // predictable shape rather than free text with spaces or punctuation.
+  if (!/^[A-Za-z0-9_]+$/.test(identifier)) {
+    return { status: false, message: "Identifier may only contain letters, numbers and underscores" };
+  }
+  if (!fields.subject) return { status: false, message: "Subject is required" };
+
+  // null = All Sports. allSports is sent explicitly so a missing sportId is
+  // never mistaken for a deliberate shared row.
+  const sport_id = fields.allSports ? null : fields.sportId ?? null;
+  if (!fields.allSports && !sport_id) {
+    return { status: false, message: "No active sport selected" };
+  }
+
+  // Pre-check the (identifier, sport) pair so the admin gets a sentence rather
+  // than a raw 23505 from email_templates_identifier_sport_uq.
+  let dupQ = supabase.from("email_templates").select("id").eq("identifier", identifier);
+  dupQ = sport_id ? dupQ.eq("sport_id", sport_id) : dupQ.is("sport_id", null);
+  const { data: dup } = await dupQ.limit(1);
+  if (dup?.length) {
+    return {
+      status: false,
+      message: sport_id
+        ? "This sport already has a template with that identifier"
+        : "An All Sports template with that identifier already exists",
+    };
+  }
+
+  const { error } = await supabase.from("email_templates").insert({
+    identifier,
+    subject: fields.subject ?? "",
+    content: fields.content ?? "",
+    sport_id,
+  });
+  if (error) {
+    if (error.code === "23505") return { status: false, message: "That identifier already exists for this scope" };
+    return fail(error);
+  }
+  return { status: true, message: "Email template added successfully" };
 };
 
 export const EditTemplate = async (data) => {

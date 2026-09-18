@@ -12,6 +12,8 @@ import crypto from '../../config/crypto';
 import { EditFaq } from '../../api/adminApi'
 import { Customdecryptdata, Customencryptdata } from '../../lib/CustomData';
 import { CustomToastHandler } from "../../hooks/useCustomToast";
+import AppliesToPills from "../../Components/AppliesToPills";
+import { useSport } from "../../context/sportContext";
 var secretKey = crypto.cryptoSecretKey
 
 const initialFormValue = {
@@ -25,6 +27,10 @@ export const EditFaqPage = ({ record }) => {
     const history = useHistory();
     const [formvalue, setFormvalue] = useState(initialFormValue);
     const [errors, setErrors] = useState({});
+    // Editable here: an FAQ is a standalone list entry, so moving it between
+    // All Sports and one sport only changes who sees that row.
+    const [allSports, setAllSports] = useState(false);
+    const { sportId } = useSport();
     const location = useLocation();
     const faqData = location.state.record || {};
 
@@ -38,6 +44,7 @@ export const EditFaqPage = ({ record }) => {
                 image: imageUrl,
                 video: videoUrl
             });
+            setAllSports(!faqData.sportId);
         }
     }, [faqData]);
 
@@ -87,7 +94,11 @@ export const EditFaqPage = ({ record }) => {
             const payload = {
                 faqId: formvalue._id,
                 question: formvalue.question,
-                answer: formvalue.answer
+                answer: formvalue.answer,
+                allSports,
+                // keep the row on its own sport; fall back to the active one
+                // for a row that was All Sports and is being scoped now
+                sportId: formvalue?.sportId ?? sportId,
             }
             const encryptedData = Customencryptdata(payload, secretKey)
             passData.append("token", encryptedData)
@@ -126,6 +137,13 @@ export const EditFaqPage = ({ record }) => {
                     </div>
 
                     <div className="mt-4">
+                        <AppliesToPills
+                            allSports={allSports}
+                            onChange={setAllSports}
+                            sportName={formvalue?.sportName}
+                            allSportsHint={"Shown to every sport, alongside each sport's own FAQs."}
+                        />
+
                         <div className="rp_singleinput_holder mb-3">
                             <p className="rp_label mb-2">Question</p>
                             <div className="rp_input_holder py-2 px-3 rounded-2">

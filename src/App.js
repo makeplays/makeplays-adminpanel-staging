@@ -9,6 +9,7 @@ import NotFound from "./Components/NotFound";
 import { useDispatch, useSelector } from "react-redux";
 import HelperRoute from "./HelperRoutes.js";
 import SocketContext from "./context/socketContext.js";
+import SportProvider from "./context/SportProvider.jsx";
 import { JoinRoom, socket } from "./config/socketIO.js";
 
 // Public Screens
@@ -26,6 +27,7 @@ import AllTeamPage from "./Screens/AllTeamPage/AllTeamPage";
 import UsersPage from "./Screens/UsersPage";
 import EventsPage from "./Screens/EventsPage/EventsPage";
 import EmailTemplatePage from "./Screens/EmailTemplatePage/EmailTemplatePage";
+import { AddEmailTemplatePage } from "./Screens/EmailTemplatePage/AddEmailTemplatePage";
 import MembersPage from "./Screens/MembersPage/MembersPage";
 import SportPage from "./Screens/SportPage/SportPage";
 import { Toaster } from "sonner";
@@ -83,6 +85,7 @@ function App() {
     { path: "/members", component: MembersPage, type: "private" },
     { path: "/members/edit", component: EditMembersPage, type: "private" },
     { path: "/email-template", component: EmailTemplatePage, type: "private" },
+    { path: "/email-template/add", component: AddEmailTemplatePage, type: "private" },
     {
       path: "/email-template/edit",
       component: EditEmailTemplatePage,
@@ -205,26 +208,28 @@ function App() {
   return (
     <BrowserRouter>
       <SocketContext.Provider value={{ socket }}>
-        <HelperRoute>
-          <Toaster
-            position="top-right"
-            theme="light"
-            richColors
-            className="customToaster"
-          />
-          <Switch>
-            {routes.map(({ path, component, type }, index) => (
-              <ConditionRoute
-                key={index}
-                exact
-                path={path}
-                component={component}
-                type={type || "private"}
-              />
-            ))}
-            <ConditionRoute component={NotFound} />
-          </Switch>
-        </HelperRoute>
+        <SportProvider>
+          <HelperRoute>
+            <Toaster
+              position="top-right"
+              theme="light"
+              richColors
+              className="customToaster"
+            />
+            <Switch>
+              {routes.map(({ path, component, type }, index) => (
+                <ConditionRoute
+                  key={index}
+                  exact
+                  path={path}
+                  component={component}
+                  type={type || "private"}
+                />
+              ))}
+              <ConditionRoute component={NotFound} />
+            </Switch>
+          </HelperRoute>
+        </SportProvider>
       </SocketContext.Provider>
     </BrowserRouter>
   );

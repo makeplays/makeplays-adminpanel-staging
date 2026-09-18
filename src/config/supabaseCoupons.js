@@ -279,20 +279,59 @@ export const getApplePoolStatus = async () => {
   return { status: true, message: "Pool status listed successfully", result };
 };
 
+// Exported so the screen's "N codes ready to add" preview counts EXACTLY what
+// the upload will insert. When the two had separate implementations the preview
+// said 1000 for a 500-row CSV, which is how the double-count shipped unnoticed.
+export const parseAppleCodes = (codes) => {
+  // Apple's one-time-code export is TWO columns per row:
+  //
+  //   E73KNLLPJEM7NAH4XH,https://apps.apple.com/redeem?ctx=offercodes&id=…&code=E73KNLLPJEM7NAH4XH
+  //
+  // The previous version split on /[\s,]+/, which flattened rows AND columns
+  // into one list — so a 500-row CSV produced 1000 "codes", half of them
+  // redemption URLs. Those would sit in the pool looking valid and be handed
+  // to a customer as something to paste into the App Store, where they can
+  // never work.
+  //
+  // So: split into ROWS first, then take the code from each row. A row may be
+  //   "CODE"                    (a pasted single column)
+  //   "CODE,https://…"          (Apple's export)
+  //   "https://…?code=CODE"     (just the URL)
+  // and the code is recovered from whichever of those it is.
+  const CODE_RE = /^[A-Z0-9]{8,}$/;
+  const parsed = String(codes || "")
+    .split(/\r?\n/)
+    .flatMap((line) => {
+      const row = line.trim();
+      if (!row) return [];
+      // A row carrying a URL is Apple's export: "CODE,https://…?code=CODE".
+      // Take the code= parameter and STOP — the bare first column is the same
+      // code, so reading both is exactly the double-count this fixes.
+      const fromUrl = row.match(/[?&]code=([A-Za-z0-9]+)/);
+      if (fromUrl) return [fromUrl[1].toUpperCase()];
+      // No URL, so this is a hand-pasted row. The placeholder tells admins
+      // "one per line, or comma-separated", so take EVERY code-shaped field
+      // here rather than just the first — otherwise pasting a comma list
+      // silently imports only its first code.
+      return row
+        .split(",")
+        .map((f) => f.trim().toUpperCase())
+        .filter((f) => CODE_RE.test(f));
+    })
+    .filter((c) => c && !/^CODE$/i.test(c));
+  return Array.from(new Set(parsed));
+};
+
 export const UploadAppleCodes = async (data) => {
   const { discountSlotId, codes } = data || {};
   if (!discountSlotId) return fail({ message: "Choose a discount" });
 
-  // Accept a pasted CSV column or newline/comma-separated list. Apple's export
-  // has a header row, so anything that doesn't look like a code is dropped.
-  const parsed = String(codes || "")
-    .split(/[\s,]+/)
-    .map((c) => c.trim())
-    .filter((c) => c && c.length >= 4 && !/^code$/i.test(c));
+  const parsed = parseAppleCodes(codes);
 
   if (!parsed.length) return fail({ message: "No codes found in that list" });
 
-  const unique = Array.from(new Set(parsed));
+  // parseAppleCodes already de-duplicated.
+  const unique = parsed;
   const { data: inserted, error } = await supabase
     .from("apple_offer_codes")
     .upsert(

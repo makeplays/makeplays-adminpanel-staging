@@ -3,11 +3,14 @@ import { Col, Container, Row } from "react-bootstrap";
 import Sidebar from "../../Components/Sidebar";
 import Header from "../../Components/Header";
 import ReactDatatable from "@ashvin27/react-datatable";
+import { IoIosAdd } from "react-icons/io";
 import { useHistory } from "react-router-dom/cjs/react-router-dom.min";
 import { getEmailTemplate } from "../../api/adminApi";
 import { useSelector } from "react-redux";
+import { useSport } from "../../context/sportContext";
 
 const EmailTemplatePage = () => {
+  const { sportId, sport } = useSport();
   let user = useSelector((state) => state.isRun);
 
   const baseColumns = [
@@ -46,6 +49,22 @@ const EmailTemplatePage = () => {
       sortable: true,
       cell: (record) => (
         <p className="text-center">{record?.identifier ? record.identifier : "--"}</p>
+      )
+    },
+    {
+      // A template is either shared by every sport (sport_id null) or an
+      // override this sport uses instead. send-email picks the winner.
+      key: "scope",
+      text: "Applies to",
+      className: "text-center",
+      align: "center",
+      sortable: false,
+      cell: (record) => (
+        <p className="text-center m-0">
+          <span className={`scope_badge ${record?.sportId ? "is_sport" : ""}`}>
+            {record?.sportId ? record?.sportName ?? "This sport" : "All Sports"}
+          </span>
+        </p>
       )
     }
   ];
@@ -131,12 +150,14 @@ const EmailTemplatePage = () => {
   };
 
   useEffect(() => {
+    if (!sportId) return;
     listTemplatedata();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sportId]);
 
   const listTemplatedata = async () => {
     try {
-      let { status, loading, error, message, result } = await getEmailTemplate();
+      let { status, loading, error, message, result } = await getEmailTemplate({ sportId });
       if (status) {
         setTemplateList(result);
       } else {
@@ -162,6 +183,20 @@ const EmailTemplatePage = () => {
 
             <div className="common_page_scroller pb-5 mt-3 mt-sm-5 pe-2">
               <div className="exchange_table_holder dashboard_box rounded-3 mt-4 tabletop">
+                <p className="dash_graymed_text px-3 pt-3 m-0">
+                  Showing <b>All Sports</b> templates and any specific to{" "}
+                  <b>{sport?.name ?? "this sport"}</b>.
+                </p>
+                <div className="d-flex justify-content-end align-items-center px-3 my-3">
+                  {user?.accessLevel === "Admin" && (
+                    <button
+                      className="exchange_tableFileUploader table_extrabtns"
+                      onClick={() => history.push("/email-template/add")}>
+                      <IoIosAdd size={25} />
+                      <p className="cmn_extraBtnsLabel m-0">Add Template</p>
+                    </button>
+                  )}
+                </div>
                 <ReactDatatable
                   config={config}
                   records={templateList}

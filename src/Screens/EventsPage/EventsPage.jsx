@@ -14,8 +14,10 @@ import { listAllEvent, DeleteEvent } from '../../api/eventApi'
 import { listAllTeams } from '../../api/teamApi'
 import { CustomToastHandler } from "../../hooks/useCustomToast";
 import { useSelector } from "react-redux";
+import { useSport } from "../../context/sportContext";
 
 const EventsPage = () => {
+  const { sportId } = useSport();
 
   const [eventList, setEventList] = useState();
   const [pageNumer, setPageNumer] = useState(1);
@@ -40,14 +42,9 @@ const EventsPage = () => {
         return <p className="">{index + 1}</p>
       },
     },
-    {
-      key: "teamName",
-      text: "Team Name",
-      sortable: true,
-      cell: (record) => {
-        return <p className="">{record?.teamId?.teamName ? record?.teamId?.teamName : "--"}</p>
-      }
-    },
+    // Team Name is gone: the Teams dropdown above the table picks the team, and
+    // it now defaults to "All Teams" rather than nothing, so the column
+    // repeated a choice already on screen.
     {
       key: "eventType",
       text: "Event Type",
@@ -57,8 +54,9 @@ const EventsPage = () => {
       ),
     },
     {
+      // "Roster Limit" on the Add Event form; max_players in the row.
       key: "maxPlayers",
-      text: "Max Players",
+      text: "Roster Limit",
       sortable: true,
       cell: (record) => {
         return <p className="">{record?.maxPlayers ? record?.maxPlayers : "--"}</p>
@@ -85,19 +83,36 @@ const EventsPage = () => {
       },
     },
     {
-      key: "duration",
-      text: "Duration",
+      // The Add Event form asks for a Start Time and an End Time; duration is
+      // derived from them and rendered "-47:00" whenever an event crosses
+      // midnight, which is what the Duration column was showing. Both halves
+      // of the real answer now, in the order the form asks them.
+      key: "time",
+      text: "Start Time",
       sortable: true,
-      cell: (record, index) => (
-        <p className="text-center">{record?.duration ? record.duration : "--"}</p>
+      cell: (record) => (
+        <p className="text-center">{record?.time ? record.time : "--"}</p>
       ),
     },
     {
+      key: "endTime",
+      text: "End Time",
+      sortable: true,
+      cell: (record) => (
+        <p className="text-center">{record?.endTime ? record.endTime : "--"}</p>
+      ),
+    },
+    {
+      // Locations are full postal addresses — "Heavy Metal Place, Westwind
+      // Drive, Spruce Grove, AB, Canada" — and unclamped they were wrapping to
+      // four lines and setting the height of every row around them.
       key: "location",
       text: "Location",
       sortable: true,
-      cell: (record, index) => (
-        <p className="text-center">{record?.location ? record.location : "--"}</p>
+      cell: (record) => (
+        <p className="text-center table_clamp_2 m-0" title={record?.location || ""}>
+          {record?.location ? record.location : "--"}
+        </p>
       ),
     },
     {
@@ -117,37 +132,26 @@ const EventsPage = () => {
       }
     },
     {
-      key: "time",
-      text: "Time",
-      sortable: true,
-      cell: (record, index) => (
-        <p className="text-center">{record?.time ? record.time : "--"}</p>
-      ),
-    },
-    {
+      // Read `record?.name` — the event's TITLE — so this column showed the
+      // event name under an "Arrive" heading for every row that had one, and
+      // "--" for the 140 events that do have an arrival time.
       key: "arrive",
-      text: "Arrive",
+      text: "Arrival Time",
       sortable: true,
-      cell: (record, index) => (
-        <p className="text-center">{record?.name ? record.name : "--"}</p>
+      cell: (record) => (
+        <p className="text-center">{record?.arrive ? record.arrive : "--"}</p>
       ),
     },
     {
       key: "uniform",
       text: "Uniform",
       sortable: true,
-      cell: (record, index) => (
+      cell: (record) => (
         <p className="text-center">{record?.uniform ? record.uniform : "--"}</p>
       ),
     },
-    {
-      key: "notes",
-      text: "Notes",
-      sortable: true,
-      cell: (record, index) => (
-        <p className="text-center">{record?.notes ? record.notes : "--"}</p>
-      ),
-    },
+    // Notes dropped: 8 of 327 events have one, and it is free text long enough
+    // to stretch a row. It stays on the edit screen, where there is room for it.
     // {
     //   key: "action",
     //   text: "Action",
@@ -228,13 +232,15 @@ const EventsPage = () => {
   }, [user]);
 
   useEffect(() => {
+    if (!sportId) return;
     getAllEvent();
     listTeam()
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sportId]);
 
   const listTeam = async () => {
     try {
-      let { status, loading, result } = await listAllTeams();
+      let { status, loading, result } = await listAllTeams({ sportId });
       if (status) {
         setTeams(result || []);
       }
@@ -245,7 +251,7 @@ const EventsPage = () => {
 
   const getAllEvent = async (reqData) => {
     try {
-      let { status, loading, error, message, result, count } = await listAllEvent(reqData);
+      let { status, loading, error, message, result, count } = await listAllEvent({ ...reqData, sportId });
       if (status) {
         setEventList(result);
         setCount(count)
@@ -336,9 +342,9 @@ const EventsPage = () => {
 
   const config = {
     page_size: 10,
-    length_menu: [10, 20, 50],
-    filename: "Emailtemplates",
-    no_data_text: "No Email Templates found!",
+    length_menu: [10, 50, 100, 200],
+    filename: "Events",
+    no_data_text: "No events found!",
     language: {
       length_menu: "Show _MENU_ result per page",
       filter: "Filter by Event Type...",
@@ -350,10 +356,10 @@ const EventsPage = () => {
         last: "Last",
       },
     },
-    show_length_menu: false,
+    show_length_menu: true,
     show_filter: true,
     show_pagination: true,
-    show_info: false,
+    show_info: true,
   };
 
   const extraButtons = [
@@ -391,7 +397,10 @@ const EventsPage = () => {
       if (status) {
         CustomToastHandler({ msg: message })
         setErrors({});
-        getAllEvent();
+        // Carry the selected team through: a bare getAllEvent() re-fetched
+        // every team's events, so deleting one row silently reset the filter
+        // while the dropdown still showed the team.
+        getAllEvent({ teamId: selectedTeam });
       } else {
         if (error) {
           setErrors(error);
@@ -446,9 +455,14 @@ const EventsPage = () => {
                     value={selectedTeam}
                     onChange={(e) => handleTeamChange(e.target.value)}
                   >
-                    <option value="" disabled hidden>
-                      Select Team
-                    </option>
+                    {/*
+                      Was `disabled hidden`, which made the empty value a
+                      placeholder you could leave but never return to: pick a
+                      team and there was no way back to every event for the
+                      sport without reloading the page. It is a real option
+                      now, and the default, so the table opens on all teams.
+                    */}
+                    <option value="">All Teams</option>
 
                     {teams.map((team) => (
                       <option key={team?._id} value={team?._id}>
