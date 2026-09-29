@@ -14,11 +14,13 @@ import { Customdecryptdata, Customencryptdata } from '../../lib/CustomData';
 import { CustomToastHandler } from "../../hooks/useCustomToast";
 import AppliesToPills from "../../Components/AppliesToPills";
 import { useSport } from "../../context/sportContext";
+import { ANSWER_STEPS_HINT, HELP_CATEGORIES } from "../../constant/helpCategories";
 var secretKey = crypto.cryptoSecretKey
 
 const initialFormValue = {
     question: "",
     answer: "",
+    category: "more",
     image: "",
     video: ""
 };
@@ -41,6 +43,7 @@ export const EditFaqPage = ({ record }) => {
 
             setFormvalue({
                 ...faqData,
+                category: faqData.category || "more",
                 image: imageUrl,
                 video: videoUrl
             });
@@ -95,6 +98,7 @@ export const EditFaqPage = ({ record }) => {
                 faqId: formvalue._id,
                 question: formvalue.question,
                 answer: formvalue.answer,
+                category: formvalue.category || "more",
                 allSports,
                 // keep the row on its own sport; fall back to the active one
                 // for a row that was All Sports and is being scoped now
@@ -160,6 +164,23 @@ export const EditFaqPage = ({ record }) => {
                         </div>
 
                         <div className="rp_singleinput_holder mb-3">
+                            <p className="rp_label mb-2">Help Centre category</p>
+                            <div className="rp_input_holder py-2 px-3 rounded-2">
+                                <select
+                                    name="category"
+                                    className="rp_singleInput flex-grow-1 w-100"
+                                    value={formvalue.category}
+                                    onChange={(e) => { handlechange(e) }}
+                                >
+                                    {HELP_CATEGORIES.map((c) => (
+                                        <option key={c.value} value={c.value}>{c.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <small className="text-muted">Where this answer appears in the app. Users browse by category before they search.</small>
+                        </div>
+
+                        <div className="rp_singleinput_holder mb-3">
                             <p className="rp_label mb-2">Answer</p>
                             <div className="rp_input_holder py-2 px-3 rounded-2">
                                 <textarea
@@ -168,9 +189,10 @@ export const EditFaqPage = ({ record }) => {
                                     rows="4"
                                     value={formvalue.answer}
                                     onChange={(e) => { handlechange(e) }}
-                                    placeholder="Enter answer"
+                                    placeholder={"1. Open the event\n2. Tap Edit\n3. Save"}
                                 />
                             </div>
+                            <small className="text-muted d-block mt-1">{ANSWER_STEPS_HINT}</small>
                             <span className="text-danger">{errors.answer}</span>
                         </div>
 

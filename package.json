@@ -38,8 +38,8 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "dev": "PORT=3001 BROWSER=none react-scripts start",
-    "start": "PORT=3001 react-scripts start",
+    "dev": "cross-env PORT=3001 BROWSER=none react-scripts start",
+    "start": "cross-env PORT=3001 react-scripts start",
     "build": "DISABLE_ESLINT_PLUGIN=true react-scripts build",
     "build_local": "REACT_APP_MODE=local GENERATE_SOURCEMAP=false DISABLE_ESLINT_PLUGIN=true react-scripts build",
     "build_demo": "REACT_APP_MODE=demo GENERATE_SOURCEMAP=false DISABLE_ESLINT_PLUGIN=true react-scripts build",
@@ -67,6 +67,7 @@
   },
   "devDependencies": {
     "ajv": "^7.2.4",
+    "cross-env": "^10.1.0",
     "eslint": "^8.57.1",
     "husky": "^9.1.7"
   }

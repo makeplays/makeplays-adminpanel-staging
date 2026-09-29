@@ -43,6 +43,8 @@ const fail = (err) => ({ status: false, message: err?.message || "Something went
 // ─── FAQ ─────────────────────────────────────────────────────────
 const faqRow = (f) => f && ({
   _id: f.id, question: f.question, answer: f.answer, image: f.image, video: f.video,
+  // Help Centre category (20260928000001); null shows under "Other questions"
+  category: f.category ?? null,
   // null = All Sports; the UI badges on this
   sportId: f.sport_id ?? null,
   sportName: f.sports?.name ?? null,
@@ -65,6 +67,7 @@ export const AddFaq = async (data) => {
   const [imageUrl, videoUrl] = await Promise.all([uploadAsset(image, "faq"), uploadAsset(video, "faq")]);
   const { error } = await supabase.from("faqs").insert({
     question: fields.question ?? "", answer: fields.answer ?? "",
+    category: fields.category || null,
     image: imageUrl ?? "", video: videoUrl ?? "",
     // "All Sports" is stored as null. The form sends allSports explicitly so a
     // missing sportId can never be mistaken for a deliberate shared row.
@@ -80,6 +83,7 @@ export const EditFaq = async (data) => {
     question: fields.question ?? "", answer: fields.answer ?? "",
     updated_at: new Date().toISOString(),
   };
+  if (fields.category !== undefined) update.category = fields.category || null;
   // Scope IS editable here, unlike email templates. An FAQ is a standalone list
   // entry: moving one between All Sports and a single sport only changes who
   // sees that row. Nothing resolves against it and nothing falls back to it, so
@@ -102,6 +106,29 @@ export const DeleteFaq = async (data) => {
   const { error } = await supabase.from("faqs").delete().eq("id", id);
   if (error) return fail(error);
   return { status: true, message: "Faq deleted successfully" };
+};
+
+// "Did this answer your question?" votes from the mobile Help Centre, grouped
+// per topic by the help_feedback_summary view (super_admin read via RLS).
+// topic_id is a helpTopics.ts id for built-in answers or faq-<uuid> for rows
+// from this panel. Sorted by not-helpful count so the worst answers lead.
+export const listHelpFeedback = async () => {
+  const { data, error } = await supabase
+    .from("help_feedback_summary")
+    .select("*")
+    .order("not_helpful_count", { ascending: false })
+    .limit(50);
+  if (error) return fail(error);
+  const result = (data ?? []).map((r) => ({
+    topicId: r.topic_id,
+    question: r.question,
+    helpful: Number(r.helpful_count ?? 0),
+    notHelpful: Number(r.not_helpful_count ?? 0),
+    helpfulPct: Number(r.helpful_pct ?? 0),
+    lastVoteAt: r.last_vote_at,
+    isAdminRow: String(r.topic_id ?? "").startsWith("faq-"),
+  }));
+  return { status: true, message: "Help feedback listed", result };
 };
 
 // ─── CMS ─────────────────────────────────────────────────────────

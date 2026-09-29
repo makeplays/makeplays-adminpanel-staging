@@ -17,6 +17,8 @@ import { CustomToastHandler } from "../../hooks/useCustomToast";
 import { useSelector } from "react-redux";
 import { FaqPageModels } from "../../Modals/FaqPageModels";
 import { useSport } from "../../context/sportContext";
+import { helpCategoryLabel } from "../../constant/helpCategories";
+import HelpFeedbackPanel from "./HelpFeedbackPanel";
 
 const FaqPage = () => {
   const { sportId, sport } = useSport();
@@ -50,6 +52,14 @@ const FaqPage = () => {
       sortable: true,
       cell: (record) => (
         <p className="text-center">{record?.question ? record.question : "--"}</p>
+      ),
+    },
+    {
+      key: "category",
+      text: "Category",
+      sortable: true,
+      cell: (record) => (
+        <p className="text-center m-0">{helpCategoryLabel(record?.category)}</p>
       ),
     },
     {
@@ -363,6 +373,9 @@ const FaqPage = () => {
             <Header title={"Team"} />
             <div className="common_page_scroller pb-5 mt-3 mt-sm-5 pe-2">
               <div className="exchange_table_holder dashboard_box rounded-3 mt-4 tabletop">
+                <div className="px-3 pt-3">
+                  <HelpFeedbackPanel onReplace={(question) => history.push("/faq/add", { question })} />
+                </div>
 
                 <div className="d-flex justify-content-end align-items-center px-3 my-3">
                   {/* <div className="cmn_extraBtnsHolder table_extrabtns d-flex justify-content-start align-items-center ">
