@@ -836,6 +836,9 @@ export const listAllFaq = async (reqData) => {
   }
 };
 
+// Help Centre votes — Supabase only, the feature postdates the legacy server.
+export const listHelpFeedback = async () => sbCommon.listHelpFeedback();
+
 export const DeleteFaq = async (data) => {
   if (USE_SUPABASE.admin) return sbCommon.DeleteFaq(data);
   try {

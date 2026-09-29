@@ -3,6 +3,7 @@ import ReactSummernote from "react-summernote";
 import "react-summernote/dist/react-summernote.css";
 import { isEmpty } from "../../lib/isEmpty";
 import { useHistory } from "react-router-dom/cjs/react-router-dom.min";
+import { useLocation } from "react-router-dom";
 import { DashboardLayout } from "../../Layouts/dashboardLayout";
 import key from "../../config/index";
 import fileObjectUrl from "../../lib/fileObjectUrl";
@@ -12,12 +13,14 @@ import { Customdecryptdata, Customencryptdata } from '../../lib/CustomData';
 import { CustomToastHandler } from "../../hooks/useCustomToast";
 import AppliesToPills from "../../Components/AppliesToPills";
 import { useSport } from "../../context/sportContext";
+import { ANSWER_STEPS_HINT, HELP_CATEGORIES } from "../../constant/helpCategories";
 
 var secretKey = crypto.cryptoSecretKey
 
 const initialFormValue = {
     question: "",
     answer: "",
+    category: "more",
     image: "",
     video: ""
 };
@@ -30,6 +33,17 @@ export const AddFaqPage = ({ record }) => {
     const [allSports, setAllSports] = useState(false);
     const history = useHistory();
     const { sportId } = useSport();
+    // "Write a better answer" on the feedback panel lands here with the failing
+    // built-in question. Keeping the question EXACT is what makes the new row
+    // replace that answer in the app instead of appearing beside it.
+    const location = useLocation();
+    const prefillQuestion = location?.state?.question;
+    useEffect(() => {
+        if (prefillQuestion) {
+            setFormvalue((prev) => ({ ...prev, question: prefillQuestion }));
+            setAllSports(true);
+        }
+    }, [prefillQuestion]);
 
     const handlechange = (e) => {
         setErrors({})
@@ -94,6 +108,7 @@ export const AddFaqPage = ({ record }) => {
             const payload = {
                 question: formvalue.question,
                 answer: formvalue.answer,
+                category: formvalue.category || "more",
                 // null sport_id = All Sports; allSports is sent explicitly so a
                 // missing sportId is never mistaken for a deliberate shared row.
                 allSports,
@@ -161,6 +176,23 @@ export const AddFaqPage = ({ record }) => {
                         </div>
 
                         <div className="rp_singleinput_holder mb-3">
+                            <p className="rp_label mb-2">Help Centre category</p>
+                            <div className="rp_input_holder py-2 px-3 rounded-2">
+                                <select
+                                    name="category"
+                                    className="rp_singleInput flex-grow-1 w-100"
+                                    value={formvalue.category}
+                                    onChange={(e) => { handlechange(e) }}
+                                >
+                                    {HELP_CATEGORIES.map((c) => (
+                                        <option key={c.value} value={c.value}>{c.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <small className="text-muted">Where this answer appears in the app. Users browse by category before they search.</small>
+                        </div>
+
+                        <div className="rp_singleinput_holder mb-3">
                             <p className="rp_label mb-2">Answer</p>
                             <div className="rp_input_holder py-2 px-3 rounded-2">
                                 <textarea
@@ -169,9 +201,10 @@ export const AddFaqPage = ({ record }) => {
                                     rows="4"
                                     value={formvalue.answer}
                                     onChange={(e) => { handlechange(e) }}
-                                    placeholder="Enter answer"
+                                    placeholder={"1. Open the event\n2. Tap Edit\n3. Save"}
                                 />
                             </div>
+                            <small className="text-muted d-block mt-1">{ANSWER_STEPS_HINT}</small>
                             <span className="text-danger">{errors.answer}</span>
                         </div>
 
