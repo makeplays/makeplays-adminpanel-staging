@@ -223,4 +223,14 @@ export const navLinks = [
         type: "private",
         image: require("../assets/images/ticket.svg").default,
     },
+    {
+        // OTA updates are app-wide, not per sport.
+        path: "/ota",
+        name: "OTA Management",
+        scope: "global",
+        exact: true,
+        sidemenu: true,
+        type: "private",
+        image: require("../assets/images/otaIcon.svg").default,
+    },
 ];

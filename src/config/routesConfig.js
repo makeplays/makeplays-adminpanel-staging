@@ -43,6 +43,10 @@ const nav = {
         "/coupons/add",
         "/coupons/edit"
     ],
+    "/ota": [
+        "/ota/notes/add",
+        "/ota/notes/edit"
+    ],
 };
 
 module.exports = nav;

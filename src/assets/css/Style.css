@@ -2618,3 +2618,345 @@ table tr td {
   height: 130px;
   margin: auto;
 }
+
+/* ─── OTA Management ───────────────────────────────────────────────────────
+   Screens/OtaPage. Colours from the panel tokens; the phone preview is the
+   app's dark sheet on purpose (it is a picture of the app, not of the panel). */
+.ota_code_small {
+  font-size: var(--font_twelve);
+  color: var(--placeholder);
+  word-break: break-all;
+}
+
+.ota_link_btn {
+  background: transparent;
+  border: 0;
+  padding: 2px 4px;
+  color: var(--white);
+  font-size: var(--font_thirteen);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.ota_link_btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.ota_pill {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: var(--font_twelve);
+  font-weight: var(--weight_six);
+  text-transform: capitalize;
+  border: 1px solid var(--box_border);
+  color: var(--placeholder);
+  white-space: nowrap;
+}
+
+.ota_pill_muted { background: transparent; }
+.ota_pill_ok { border-color: var(--table_green); color: var(--table_green); }
+.ota_pill_off { border-color: var(--box_border); color: var(--placeholder); text-decoration: line-through; }
+.ota_pill_live { background: var(--static-primary1); border-color: var(--static-primary1); color: var(--white); text-transform: none; }
+.ota_mode_sheet { border-color: var(--link); color: var(--link); }
+.ota_mode_banner { border-color: var(--table_green); color: var(--table_green); }
+.ota_mode_required { border-color: var(--static-primary1); color: var(--white); background: var(--static-primary1); }
+.ota_mode_silent { color: var(--placeholder); }
+
+/* Mode chooser */
+.ota_modes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+}
+
+.ota_mode {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--box_border);
+  background: var(--dash_box);
+  color: var(--white);
+  cursor: pointer;
+}
+
+.ota_mode.is_active {
+  border-color: var(--static-primary1);
+  box-shadow: inset 0 0 0 1px var(--static-primary1);
+}
+
+.ota_mode_label { font-weight: var(--weight_six); font-size: var(--font_fifteen); }
+.ota_mode_hint { font-size: var(--font_twelve); color: var(--placeholder); line-height: 1.4; }
+
+/* Items editor */
+.ota_item_row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 0;
+  border-top: 1px solid var(--box_border);
+}
+
+.ota_icon_btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid var(--box_border);
+  background: var(--dash_box);
+  color: var(--white);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.ota_icon_grid {
+  position: absolute;
+  z-index: 20;
+  top: 48px;
+  left: 0;
+  width: 280px;
+  max-width: 80vw;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  padding: 8px;
+  border-radius: 10px;
+  background: var(--common_bg);
+  border: 1px solid var(--box_border);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.ota_icon_cell {
+  aspect-ratio: 1;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--white);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.ota_icon_cell:hover,
+.ota_icon_cell.is_active { border-color: var(--static-primary1); }
+
+/* Switch (the panel has none) */
+.ota_switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  margin: 0;
+}
+
+.ota_switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+.ota_switch.is_readonly { cursor: default; opacity: 0.7; }
+
+.ota_switch_track {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--box_border);
+  transition: background 0.15s;
+  flex: none;
+}
+
+.ota_switch_thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--white);
+  transition: transform 0.15s;
+}
+
+.ota_switch input:checked + .ota_switch_track { background: var(--table_green_btn); }
+.ota_switch input:checked + .ota_switch_track .ota_switch_thumb { transform: translateX(18px); }
+.ota_switch input:focus-visible + .ota_switch_track { outline: 2px solid var(--link); outline-offset: 2px; }
+
+/* Deploy commands */
+.ota_cmd {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--box_border);
+  background: var(--dash_box);
+}
+
+.ota_cmd_text {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font_thirteen);
+  color: var(--white);
+  white-space: pre-wrap;
+  word-break: break-all;
+  user-select: all;
+}
+
+.ota_cmd_copy {
+  flex: none;
+  border: 1px solid var(--box_border);
+  background: transparent;
+  color: var(--white);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: var(--font_twelve);
+  cursor: pointer;
+}
+
+/* Phone preview — a picture of the app's What's New */
+.ota_phone {
+  width: 100%;
+  max-width: 300px;
+  margin: 0 auto;
+  border-radius: 34px;
+  padding: 10px;
+  background: #000;
+  border: 1px solid var(--box_border);
+}
+
+.ota_phone_screen {
+  position: relative;
+  aspect-ratio: 9 / 18;
+  border-radius: 26px;
+  overflow: hidden;
+  background: #121214;
+  font-family: "Poppins", "Montserrat", sans-serif;
+  color: #f2f0ee;
+}
+
+.ota_phone_app {
+  padding: 40px 18px;
+  font-weight: 700;
+  font-size: 15px;
+  color: #6e6a72;
+}
+
+.ota_phone_silent { position: absolute; inset: auto 16px 40% 16px; text-align: center; }
+.ota_phone_scrim { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.55); }
+
+.ota_phone_sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 86%;
+  overflow-y: auto;
+  background: #1b1b1e;
+  border-radius: 18px 18px 0 0;
+  padding: 8px 16px 16px;
+}
+
+.ota_phone_grab { width: 34px; height: 4px; border-radius: 2px; background: #3a3a40; margin: 0 auto 10px; }
+.ota_phone_close { position: absolute; right: 14px; top: 10px; font-size: 14px; }
+.ota_phone_image { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 10px; margin-bottom: 10px; }
+.ota_phone_title { font-weight: 700; font-size: 16px; margin: 0 22px 2px 0; }
+.ota_phone_subtitle { font-size: 11.5px; color: #a4a0a6; margin: 0; }
+.ota_phone_items { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.ota_phone_item { display: flex; gap: 9px; align-items: flex-start; }
+
+.ota_phone_item_icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: #c2272d;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+.ota_phone_item_title { font-weight: 600; font-size: 12.5px; margin: 0; }
+.ota_phone_item_body { font-size: 11px; color: #a4a0a6; margin: 1px 0 0; line-height: 1.35; }
+
+.ota_phone_cta {
+  margin-top: 14px;
+  border-radius: 999px;
+  background: #c2272d;
+  color: #fff;
+  text-align: center;
+  padding: 9px;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.ota_phone_required { font-size: 10px; color: #f5c27a; text-align: center; margin: 8px 0 0; }
+
+.ota_phone_banner {
+  position: absolute;
+  top: 34px;
+  left: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 11px;
+  border-radius: 12px;
+  background: #1f1f23;
+  border: 1px solid #34343a;
+}
+
+.ota_phone_banner_title { font-weight: 600; font-size: 12px; margin: 0; }
+.ota_phone_banner_line { font-size: 10.5px; color: #a4a0a6; margin: 0; }
+
+/* OTA Management → Builds */
+.ota_seg {
+  border: 1px solid var(--box_border);
+  background: transparent;
+  color: var(--placeholder);
+  border-radius: 999px;
+  padding: 6px 16px;
+  font-size: var(--font_thirteen);
+  cursor: pointer;
+}
+
+.ota_seg.is_active { background: var(--static-primary1); border-color: var(--static-primary1); color: var(--white); }
+
+.ota_chart_wrap { overflow-x: auto; }
+.ota_chart_wrap svg { display: block; max-width: none; }
+
+.ota_build_card {
+  background: var(--dash_box);
+  border: 1px solid var(--box_border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.ota_build_title { margin: 0; font-weight: var(--weight_six); font-size: var(--font_sixteen); color: var(--white); }
+.ota_build_size { margin: 0; font-weight: var(--weight_six); font-size: var(--font_fifteen); color: var(--white); }
+
+.ota_changelog {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  max-height: 260px;
+  overflow: auto;
+  white-space: pre-wrap;
+  font-size: var(--font_twelve);
+  color: var(--placeholder);
+  background: var(--common_bg);
+  border: 1px solid var(--box_border);
+  border-radius: 8px;
+}
+
+.ota_build_bundles {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--box_border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ota_bundle_row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.ota_bundle_row.is_off { opacity: 0.55; }
+.ota_bundle_msg { flex: 1 1 200px; min-width: 0; }
