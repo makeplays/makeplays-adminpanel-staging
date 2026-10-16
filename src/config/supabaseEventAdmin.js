@@ -176,6 +176,13 @@ const syncTemplateAudios = async (templateId) => {
   catch (e) { console.log('announcement-tts sync err', e?.message || e); }
 };
 
+// Same, for one announcement type's spoken word (announcement-tts { typeId }).
+// Returns as soon as the function has queued the work.
+const syncTypeAudios = async (typeId) => {
+  try { await supabase.functions.invoke('announcement-tts', { body: { typeId } }); }
+  catch (e) { console.log('announcement-tts type sync err', e?.message || e); }
+};
+
 export const addAnnouncementTemplate = async (data = {}) => {
   const { sportId, categoryId, typeId } = data;
   if (!sportId) return { status: false, message: 'No active sport selected' };
@@ -439,7 +446,7 @@ export const addAnnouncementType = async (data = {}) => {
     .from('announcement_categories').select('name').eq('id', categoryId).maybeSingle();
   if (!cat) return { status: false, message: 'Category not found' };
 
-  const { error } = await supabase.from('announcement_types').insert({
+  const { data: row, error } = await supabase.from('announcement_types').insert({
     sport_id: sportId,
     category_id: categoryId,
     // the text column stays in step with the FK — announcement-tts and mobile
@@ -447,11 +454,15 @@ export const addAnnouncementType = async (data = {}) => {
     category: cat.name,
     type: String(type).trim(),
     audio_url: {},
-  });
+  }).select('id').single();
   if (error) {
     if (error.code === '23505') return { status: false, message: 'That type already exists in this category' };
     return { status: false, message: error.message };
   }
+  // Give the new word a clip in every voice now (background, server-side). It
+  // used to wait for a team's next live entry, which generated it on the spot
+  // — an Infraction or Duration word added here was a delay at puck drop.
+  await syncTypeAudios(row.id);
   return { status: true, message: 'Type added successfully' };
 };
 

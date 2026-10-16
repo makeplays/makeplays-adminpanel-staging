@@ -10,8 +10,9 @@ export const HELP_CATEGORIES = [
   { value: "music", label: "DJ, music & voices" },
   { value: "chat", label: "Chat & carpool" },
   { value: "parents", label: "Parent Hub (calendar, kid alerts, stats, volunteering)" },
+  { value: "tournaments", label: "Tournaments" },
   { value: "billing", label: "Make Plays Pro (billing)" },
-  { value: "fees", label: "Team fees" },
+  { value: "fees", label: "Finance (fees, budget, receipts)" },
   { value: "troubleshooting", label: "Privacy & troubleshooting" },
   { value: "more", label: "Other questions" },
 ];

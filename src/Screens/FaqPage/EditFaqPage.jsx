@@ -15,19 +15,23 @@ import { CustomToastHandler } from "../../hooks/useCustomToast";
 import AppliesToPills from "../../Components/AppliesToPills";
 import { useSport } from "../../context/sportContext";
 import { ANSWER_STEPS_HINT, HELP_CATEGORIES } from "../../constant/helpCategories";
+import FaqImagesField from "../../Components/FaqImagesField";
 var secretKey = crypto.cryptoSecretKey
 
 const initialFormValue = {
     question: "",
     answer: "",
     category: "more",
-    image: "",
     video: ""
 };
 
 export const EditFaqPage = ({ record }) => {
     const history = useHistory();
     const [formvalue, setFormvalue] = useState(initialFormValue);
+    // Saved images are kept as the raw stored values (so legacy filenames round-
+    // trip unchanged); newImages are picked files not uploaded yet.
+    const [existingImages, setExistingImages] = useState([]);
+    const [newImages, setNewImages] = useState([]);
     const [errors, setErrors] = useState({});
     // Editable here: an FAQ is a standalone list entry, so moving it between
     // All Sports and one sport only changes who sees that row.
@@ -38,15 +42,18 @@ export const EditFaqPage = ({ record }) => {
 
     useEffect(() => {
         if (faqData) {
-            const imageUrl = assetUrl(faqData.image, `${key.IMAGE_URL}/Faq/`);
             const videoUrl = assetUrl(faqData.video, `${key.IMAGE_URL}/Faq/`);
 
             setFormvalue({
                 ...faqData,
                 category: faqData.category || "more",
-                image: imageUrl,
                 video: videoUrl
             });
+            setExistingImages(
+                Array.isArray(faqData.images) && faqData.images.length
+                    ? faqData.images
+                    : (faqData.image ? [faqData.image] : [])
+            );
             setAllSports(!faqData.sportId);
         }
     }, [faqData]);
@@ -64,12 +71,6 @@ export const EditFaqPage = ({ record }) => {
 
         if (!files || !files[0]) return;
 
-        if (name === "image") {
-            if (!/\.(png|jpeg|jpg|webp)$/i.test(files[0].name)) {
-                error.image = "Please upload image (.png, .jpeg, .jpg, .webp)";
-            }
-        }
-
         if (name === "video") {
             if (!/\.(mp4|mov|avi|mkv)$/i.test(files[0].name)) {
                 error.video = "Please upload video (.mp4, .mov, .avi)";
@@ -86,9 +87,7 @@ export const EditFaqPage = ({ record }) => {
     const handleSubmit = async () => {
         try {
             let passData = new FormData();
-            if (formvalue.image && typeof formvalue.image === 'object') {
-                passData.append("image", formvalue.image);
-            }
+            newImages.forEach((file) => passData.append("images", file));
 
             if (formvalue.video instanceof File) {
                 passData.append("video", formvalue.video);
@@ -99,6 +98,8 @@ export const EditFaqPage = ({ record }) => {
                 question: formvalue.question,
                 answer: formvalue.answer,
                 category: formvalue.category || "more",
+                // the saved images the admin kept, in order; new files are appended
+                existingImages,
                 allSports,
                 // keep the row on its own sport; fall back to the active one
                 // for a row that was All Sports and is being scoped now
@@ -125,6 +126,8 @@ export const EditFaqPage = ({ record }) => {
 
     const handleCloseModal = () => {
         setFormvalue(initialFormValue);
+        setExistingImages([]);
+        setNewImages([]);
         setErrors({});
         history.push("/faq")
     };
@@ -196,27 +199,14 @@ export const EditFaqPage = ({ record }) => {
                             <span className="text-danger">{errors.answer}</span>
                         </div>
 
-                        <div className="rp_singleinput_holder mb-3">
-                            <p className="rp_label mb-2">Image</p>
-                            <div className="rp_input_holder py-2 px-3 rounded-2">
-                                <input
-                                    type="file"
-                                    name="image"
-                                    accept="image/*"
-                                    className="rp_singleInput flex-grow-1"
-                                    onChange={(event) => handleFileChange(event)}
-
-                                />
-                            </div>
-                            <div className="w-100 my-3 d-flex">
-                                {typeof formvalue.image == 'object' ? (
-                                    <img src={fileObjectUrl(formvalue?.image)} className='w-25 rounded-2' alt='' />
-                                ) : (
-                                    <img src={formvalue?.image} className='w-25 rounded-2' alt='' />
-                                )}
-                            </div>
-                            <span className="text-danger">{errors.image}</span>
-                        </div>
+                        <FaqImagesField
+                            existing={existingImages}
+                            files={newImages}
+                            resolve={(value) => assetUrl(value, `${key.IMAGE_URL}/Faq/`)}
+                            onChange={({ existing, files }) => { setExistingImages(existing); setNewImages(files); }}
+                            onError={(message) => setErrors(message ? { image: message } : {})}
+                            error={errors.image}
+                        />
 
                         <div className="rp_singleinput_holder mb-3">
                             <p className="rp_label mb-2">Video</p>

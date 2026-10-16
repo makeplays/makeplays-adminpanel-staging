@@ -17,13 +17,15 @@ import { CustomToastHandler } from "../../hooks/useCustomToast";
 import { useSelector } from "react-redux";
 import { FaqPageModels } from "../../Modals/FaqPageModels";
 import { useSport } from "../../context/sportContext";
-import { helpCategoryLabel } from "../../constant/helpCategories";
+import { HELP_CATEGORIES, helpCategoryLabel } from "../../constant/helpCategories";
 import HelpFeedbackPanel from "./HelpFeedbackPanel";
 
 const FaqPage = () => {
   const { sportId, sport } = useSport();
   
   const [list, setList] = useState();
+  // "all" or a HELP_CATEGORIES value; narrows the table before the text filter.
+  const [categoryFilter, setCategoryFilter] = useState("all");
   // pageNumer/limit/count all went with the server-side paging that
   // listAllFaq never implemented — it ignores page, limit and search and
   // returns every row. The table owns paging, filtering and the record
@@ -55,7 +57,10 @@ const FaqPage = () => {
       ),
     },
     {
-      key: "category",
+      // Keyed on the label, not the stored id: the table's filter box searches
+      // the value under each column key, so "getting started" only matches the
+      // text an admin can see, never the stored "getting-started".
+      key: "categoryLabel",
       text: "Category",
       sortable: true,
       cell: (record) => (
@@ -97,12 +102,24 @@ const FaqPage = () => {
       text: "Image",
       sortable: false,
       cell: (record) => {
-        if (record?.image && record?.image !== "undefined") {
+        const cover = record?.images?.[0] || record?.image;
+        if (cover && cover !== "undefined") {
+          const extra = (record?.images?.length || 1) - 1;
           return (
-            <div className="tableFaqImgViewCard">
+            <div className="tableFaqImgViewCard" style={{ position: "relative" }}>
               <img
-                src={assetUrl(record.image, `${key.IMAGE_URL}/Faq/`)}
+                src={assetUrl(cover, `${key.IMAGE_URL}/Faq/`)}
               />{" "}
+              {extra > 0 && (
+                <span
+                  style={{
+                    position: "absolute", right: 6, bottom: 6, padding: "1px 7px", borderRadius: 10,
+                    fontSize: 11, background: "rgba(0,0,0,0.65)", color: "#fff",
+                  }}
+                >
+                  +{extra}
+                </span>
+              )}
             </div>
           );
         }
@@ -197,6 +214,26 @@ const FaqPage = () => {
     getAllFaq();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sportId]);
+
+  // Every row carries its category label (what the filter box searches), and
+  // the dropdown narrows by category id. A row with no category counts as
+  // "Other questions", the same as in the app.
+  const categorized = useMemo(
+    () => (list ?? []).map((r) => ({ ...r, categoryLabel: helpCategoryLabel(r.category) })),
+    [list]
+  );
+  const categoryCounts = useMemo(() => {
+    const counts = {};
+    categorized.forEach((r) => {
+      const id = r.category || "more";
+      counts[id] = (counts[id] || 0) + 1;
+    });
+    return counts;
+  }, [categorized]);
+  const visibleRecords = useMemo(
+    () => (categoryFilter === "all" ? categorized : categorized.filter((r) => (r.category || "more") === categoryFilter)),
+    [categorized, categoryFilter]
+  );
 
   const getAllFaq = async (reqData) => {
     try {
@@ -377,11 +414,25 @@ const FaqPage = () => {
                   <HelpFeedbackPanel onReplace={(question) => history.push("/faq/add", { question })} />
                 </div>
 
-                <div className="d-flex justify-content-end align-items-center px-3 my-3">
+                <div className="d-flex justify-content-between align-items-center px-3 my-3 flex-wrap gap-2">
                   {/* <div className="cmn_extraBtnsHolder table_extrabtns d-flex justify-content-start align-items-center ">
                     <Exportexcel excelData={sportsList} fileName={"users"} />
                     <p className="m-0 cmn_extraBtnsLabel">Exports</p>
                   </div> */}
+                  <select
+                    className="form-select"
+                    style={{ maxWidth: 320 }}
+                    value={categoryFilter}
+                    onChange={(e) => setCategoryFilter(e.target.value)}
+                    aria-label="Filter FAQs by category"
+                  >
+                    <option value="all">All categories ({categorized.length})</option>
+                    {HELP_CATEGORIES.map((c) => (
+                      <option key={c.value} value={c.value}>
+                        {c.label} ({categoryCounts[c.value] || 0})
+                      </option>
+                    ))}
+                  </select>
                   <div className="d-flex justif-content-end align-items-center gap-2">
                     {user?.accessLevel && user?.accessLevel === "Admin" ?
                       <button className="exchange_tableFileUploader table_extrabtns" onClick={handleShowAddUsers}>
@@ -407,9 +458,14 @@ const FaqPage = () => {
                   all three itself, and the filter searches every column —
                   question, answer, identifier and scope alike.
                 */}
+                {/* key={categoryFilter} remounts the table on each category change.
+                    It keeps its own page number and never resets it when `records`
+                    changes, so being on page 2 and picking a category with a few
+                    rows left it asking for page 2 of 1 — an empty table. */}
                 <ReactDatatable
+                  key={categoryFilter}
                   config={config}
-                  records={list}
+                  records={visibleRecords}
                   columns={columns}
                   extraButtons={extraButtons}
                 />

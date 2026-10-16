@@ -14,6 +14,7 @@ import { CustomToastHandler } from "../../hooks/useCustomToast";
 import AppliesToPills from "../../Components/AppliesToPills";
 import { useSport } from "../../context/sportContext";
 import { ANSWER_STEPS_HINT, HELP_CATEGORIES } from "../../constant/helpCategories";
+import FaqImagesField from "../../Components/FaqImagesField";
 
 var secretKey = crypto.cryptoSecretKey
 
@@ -21,12 +22,12 @@ const initialFormValue = {
     question: "",
     answer: "",
     category: "more",
-    image: "",
     video: ""
 };
 
 export const AddFaqPage = ({ record }) => {
     const [formvalue, setFormvalue] = useState(initialFormValue);
+    const [newImages, setNewImages] = useState([]);
     const [errors, setErrors] = useState({});
     // Defaults to the active sport — the safer accident: a stray sport-scoped
     // FAQ affects one sport, a stray shared one affects every sport.
@@ -57,12 +58,6 @@ export const AddFaqPage = ({ record }) => {
         let error = {};
 
         if (!files || !files[0]) return;
-
-        if (name === "image") {
-            if (!/\.(png|jpeg|jpg|webp)$/i.test(files[0].name)) {
-                error.image = "Please upload image (.png, .jpeg, .jpg, .webp)";
-            }
-        }
 
         if (name === "video") {
             if (!/\.(mp4|mov|avi|mkv)$/i.test(files[0].name)) {
@@ -97,9 +92,7 @@ export const AddFaqPage = ({ record }) => {
             }
 
             let passData = new FormData();
-            if (formvalue.image && typeof formvalue.image === 'object') {
-                passData.append("image", formvalue.image);
-            }
+            newImages.forEach((file) => passData.append("images", file));
 
             if (formvalue.video instanceof File) {
                 passData.append("video", formvalue.video);
@@ -137,6 +130,7 @@ export const AddFaqPage = ({ record }) => {
 
     const handleCloseModal = () => {
         setFormvalue(initialFormValue);
+        setNewImages([]);
         setErrors({});
         history.push("/faq")
     };
@@ -208,36 +202,12 @@ export const AddFaqPage = ({ record }) => {
                             <span className="text-danger">{errors.answer}</span>
                         </div>
 
-                        <div className="rp_singleinput_holder mb-3">
-                            <p className="rp_label mb-2">Image</p>
-                            <div className="rp_input_holder py-2 px-3 rounded-2">
-                                <input
-                                    type="file"
-                                    name="image"
-                                    accept="image/*"
-                                    className="rp_singleInput flex-grow-1"
-                                    onChange={(event) => handleFileChange(event)}
-                                />
-                            </div>
-                            {formvalue?.image ? (
-                                <div className="w-100 my-3 d-flex">
-                                    {typeof formvalue.image === "object" ? (
-                                        <img
-                                            src={fileObjectUrl(formvalue.image)}
-                                            className="w-25 rounded-2"
-                                            alt="Sport Logo Preview"
-                                        />
-                                    ) : (
-                                        <img
-                                            src={formvalue.image}
-                                            className="w-25 rounded-2"
-                                            alt="Sport Logo"
-                                        />
-                                    )}
-                                </div>
-                            ) : null}
-                            <span className="text-danger">{errors.image}</span>
-                        </div>
+                        <FaqImagesField
+                            files={newImages}
+                            onChange={({ files }) => setNewImages(files)}
+                            onError={(message) => setErrors(message ? { image: message } : {})}
+                            error={errors.image}
+                        />
 
                         <div className="rp_singleinput_holder mb-3">
                             <p className="rp_label mb-2">Video</p>

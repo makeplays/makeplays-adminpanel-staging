@@ -63,6 +63,8 @@ import DataDeletion from "./Screens/DataDeletion/DataDeletion.jsx";
 import AnnouncementTemplatePage from "./Screens/AnnouncementTemplatePage/AnnouncementTemplatePage.jsx";
 import { AddAnnouncementTemplatePage } from "./Screens/AnnouncementTemplatePage/AddAnnouncementTemplatePage.jsx";
 import { EditAnnouncementTemplatePage } from "./Screens/AnnouncementTemplatePage/EditAnnouncementTemplatePage.jsx";
+import OtaPage from "./Screens/OtaPage/OtaPage.jsx";
+import OtaNoteFormPage from "./Screens/OtaPage/OtaNoteFormPage.jsx";
 
 function App() {
   const dispatch = useDispatch();
@@ -130,6 +132,9 @@ function App() {
     { path: "/announcement-template", component: AnnouncementTemplatePage, type: "private" },
     { path: "/announcement-template/add", component: AddAnnouncementTemplatePage, type: "private" },
     { path: "/announcement-template/edit", component: EditAnnouncementTemplatePage, type: "private" },  
+    { path: "/ota", component: OtaPage, type: "private" },
+    { path: "/ota/notes/add", component: OtaNoteFormPage, type: "private" },
+    { path: "/ota/notes/edit", component: OtaNoteFormPage, type: "private" },
   ];
 
   useEffect(() => {

@@ -19,9 +19,11 @@ function parsePayload(data) {
       fields: fields || {},
       image: image && image.name ? image : null,
       video: video && video.name ? video : null,
+      // FAQ multi-image: every "images" part, in the order the admin picked them
+      images: data.getAll("images").filter((f) => f && f.name),
     };
   }
-  return { fields: data || {}, image: null, video: null };
+  return { fields: data || {}, image: null, video: null, images: [] };
 }
 
 // Public asset upload (FAQ/broadcast images, FAQ videos) → public URL
@@ -40,9 +42,59 @@ async function uploadAsset(file, prefix) {
 
 const fail = (err) => ({ status: false, message: err?.message || "Something went wrong!" });
 
+// ─── FAQ media (faq-media bucket) ────────────────────────────────
+const FAQ_BUCKET = "faq-media";
+export const MAX_FAQ_IMAGES = 10;
+
+const faqMediaPath = (file) => {
+  const safe = String(file.name || "file").replace(/[^A-Za-z0-9._-]/g, "_");
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safe}`;
+};
+
+// Unlike uploadAsset, a failed upload is an error, not a silently missing file.
+// If any file in the batch fails, the ones that already went up are removed so
+// a failed save leaves nothing orphaned in the bucket.
+async function uploadFaqFiles(files) {
+  if (!files.length) return [];
+  const bucket = supabase.storage.from(FAQ_BUCKET);
+  const results = await Promise.allSettled(
+    files.map(async (file) => {
+      const path = faqMediaPath(file);
+      const { error } = await bucket.upload(path, file, {
+        contentType: file.type || "application/octet-stream",
+        upsert: false,
+      });
+      if (error) throw error;
+      return { path, url: bucket.getPublicUrl(path).data.publicUrl };
+    })
+  );
+  const failed = results.find((r) => r.status === "rejected");
+  if (failed) {
+    const uploaded = results.filter((r) => r.status === "fulfilled").map((r) => r.value.path);
+    if (uploaded.length) await bucket.remove(uploaded).catch(() => {});
+    throw new Error(failed.reason?.message || "Could not upload the files");
+  }
+  return results.map((r) => r.value.url);
+}
+
+// Storage object path for a URL that lives in faq-media; null for anything else
+// (legacy filenames, team-logos URLs), which are left alone.
+const faqMediaPathFromUrl = (url) => {
+  const marker = `/${FAQ_BUCKET}/`;
+  const i = typeof url === "string" ? url.indexOf(marker) : -1;
+  return i === -1 ? null : decodeURIComponent(url.slice(i + marker.length).split("?")[0]);
+};
+
+const removeFaqMedia = async (urls) => {
+  const paths = (urls || []).map(faqMediaPathFromUrl).filter(Boolean);
+  if (paths.length) await supabase.storage.from(FAQ_BUCKET).remove(paths).catch(() => {});
+};
+
 // ─── FAQ ─────────────────────────────────────────────────────────
 const faqRow = (f) => f && ({
   _id: f.id, question: f.question, answer: f.answer, image: f.image, video: f.video,
+  // Ordered list; rows from before the images column fall back to the single image
+  images: Array.isArray(f.images) && f.images.length ? f.images : (f.image ? [f.image] : []),
   // Help Centre category (20260928000001); null shows under "Other questions"
   category: f.category ?? null,
   // null = All Sports; the UI badges on this
@@ -63,12 +115,22 @@ export const listAllFaq = async (reqData = {}) => {
 };
 
 export const AddFaq = async (data) => {
-  const { fields, image, video } = parsePayload(data);
-  const [imageUrl, videoUrl] = await Promise.all([uploadAsset(image, "faq"), uploadAsset(video, "faq")]);
+  const { fields, images, video } = parsePayload(data);
+  if (images.length > MAX_FAQ_IMAGES) return fail({ message: `You can add up to ${MAX_FAQ_IMAGES} images` });
+  let imageUrls = [];
+  let videoUrl = "";
+  try {
+    imageUrls = await uploadFaqFiles(images);
+    videoUrl = video ? (await uploadFaqFiles([video]))[0] : "";
+  } catch (err) {
+    if (imageUrls.length) await removeFaqMedia(imageUrls);
+    return fail(err);
+  }
   const { error } = await supabase.from("faqs").insert({
     question: fields.question ?? "", answer: fields.answer ?? "",
     category: fields.category || null,
-    image: imageUrl ?? "", video: videoUrl ?? "",
+    // images[0] is mirrored into the legacy `image` column for older app builds
+    images: imageUrls, image: imageUrls[0] ?? "", video: videoUrl,
     // "All Sports" is stored as null. The form sends allSports explicitly so a
     // missing sportId can never be mistaken for a deliberate shared row.
     sport_id: fields.allSports ? null : fields.sportId ?? null,
@@ -78,7 +140,8 @@ export const AddFaq = async (data) => {
 };
 
 export const EditFaq = async (data) => {
-  const { fields, image, video } = parsePayload(data);
+  const { fields, images: newImages, video } = parsePayload(data);
+  const faqId = fields.faqId ?? fields._id;
   const update = {
     question: fields.question ?? "", answer: fields.answer ?? "",
     updated_at: new Date().toISOString(),
@@ -93,18 +156,47 @@ export const EditFaq = async (data) => {
       ? null
       : fields.sportId ?? null;
   }
-  const [imageUrl, videoUrl] = await Promise.all([uploadAsset(image, "faq"), uploadAsset(video, "faq")]);
-  if (imageUrl) update.image = imageUrl;
-  if (videoUrl) update.video = videoUrl;
-  const { error } = await supabase.from("faqs").update(update).eq("id", fields.faqId ?? fields._id);
-  if (error) return fail(error);
+  // existingImages = the URLs the admin chose to keep (in order); new files are
+  // appended after them. When the form sends neither, images are left untouched.
+  const keep = Array.isArray(fields.existingImages) ? fields.existingImages : null;
+  const touchesImages = keep !== null || newImages.length > 0;
+  let previous = [];
+  let uploadedImages = [];
+  try {
+    if (touchesImages) {
+      const { data: current } = await supabase.from("faqs").select("images, image").eq("id", faqId).maybeSingle();
+      previous = Array.isArray(current?.images) && current.images.length ? current.images : (current?.image ? [current.image] : []);
+      const kept = keep ?? previous;
+      if (kept.length + newImages.length > MAX_FAQ_IMAGES) {
+        return fail({ message: `You can add up to ${MAX_FAQ_IMAGES} images` });
+      }
+      uploadedImages = await uploadFaqFiles(newImages);
+      const finalImages = [...kept, ...uploadedImages];
+      update.images = finalImages;
+      update.image = finalImages[0] ?? "";
+    }
+    if (video) update.video = (await uploadFaqFiles([video]))[0];
+  } catch (err) {
+    if (uploadedImages.length) await removeFaqMedia(uploadedImages);
+    return fail(err);
+  }
+  const { error } = await supabase.from("faqs").update(update).eq("id", faqId);
+  if (error) {
+    if (uploadedImages.length) await removeFaqMedia(uploadedImages);
+    return fail(error);
+  }
+  // Only after the row is saved: drop files the admin removed from the bucket.
+  if (touchesImages) await removeFaqMedia(previous.filter((u) => !update.images.includes(u)));
   return { status: true, message: "Faq updated successfully" };
 };
 
 export const DeleteFaq = async (data) => {
   const id = data?.faqId ?? data?._id;
+  const { data: row } = await supabase.from("faqs").select("images, image, video").eq("id", id).maybeSingle();
   const { error } = await supabase.from("faqs").delete().eq("id", id);
   if (error) return fail(error);
+  // The row is gone — free its files from the faq-media bucket too.
+  if (row) await removeFaqMedia([...(Array.isArray(row.images) ? row.images : []), row.image, row.video]);
   return { status: true, message: "Faq deleted successfully" };
 };
 
